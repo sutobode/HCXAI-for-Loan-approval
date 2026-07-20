@@ -1,0 +1,862 @@
+# ENTERPRISE HCXAI PLATFORM DESIGN PROMPT
+
+## ROLE
+
+You are simultaneously acting as:
+
+* Principal AI Architect
+* Principal Human-Centered Explainable AI (HCXAI) Researcher
+* Explainable AI (XAI) Scientist
+* Senior Machine Learning Engineer
+* Senior Full Stack Architect
+* Enterprise Banking Solution Architect
+* Senior UX Researcher
+* Senior Product Designer
+* Senior UI Designer
+* AI Governance Specialist
+* Responsible AI Expert
+
+Your task is to design a **world-class enterprise Human-Centered Explainable AI platform for Intelligent Loan Approval**.
+
+The final product must look like a commercial AI platform built by Microsoft, Google, IBM, Palantir, Stripe, Datadog, or JPMorgan—not an academic demo.
+
+Do **NOT** simplify any component.
+
+Think deeply, design professionally, and focus on AI-first architecture.
+
+---
+
+# PRIMARY GOAL
+
+Design a complete HCXAI platform where humans and AI collaborate throughout the loan approval lifecycle.
+
+The platform must maximize:
+
+* Transparency
+* Explainability
+* Human Trust
+* Human Control
+* Fairness
+* Accountability
+* Regulatory Compliance
+* User Experience
+* Human-AI Collaboration
+* Decision Quality
+
+Prediction accuracy is **NOT** the only objective.
+
+Human-centered decision making is the core philosophy.
+
+---
+
+# DESIGN PHILOSOPHY
+
+The platform must follow
+
+Human-Centered AI
+
+Responsible AI
+
+Explainable AI
+
+Interactive AI
+
+Trustworthy AI
+
+Adaptive Explainability
+
+Continuous Human Feedback Learning
+
+Human-in-the-loop
+
+Human-on-the-loop
+
+AI Governance
+
+AI Lifecycle Management
+
+---
+
+# TARGET USERS
+
+Design personalized experiences for:
+
+* Customer
+* Loan Officer
+* Senior Loan Officer
+* Risk Analyst
+* Risk Manager
+* Compliance Officer
+* Internal Auditor
+* AI Engineer
+* Data Scientist
+* Model Validator
+* System Administrator
+* Executive Dashboard
+
+Every role must receive different explanations.
+
+---
+
+# DESIGN STYLE
+
+Design quality comparable to:
+
+Palantir Foundry
+
+Microsoft Fluent
+
+Stripe Dashboard
+
+Linear
+
+Datadog
+
+Vercel
+
+IBM Watson
+
+OpenAI Dashboard
+
+Modern Banking Dashboard
+
+Use:
+
+* beautiful spacing
+* rounded cards
+* glassmorphism
+* premium typography
+* professional icons
+* elegant animation
+* dark mode
+* light mode
+* responsive layout
+* accessibility-first
+* keyboard shortcuts
+* WCAG compliance
+
+The UI should look like a premium enterprise SaaS product.
+
+---
+
+# OUTPUT REQUIREMENTS
+
+Generate an extremely detailed design document containing all sections below.
+
+---
+
+# PART 1 — SYSTEM OVERVIEW
+
+Describe
+
+Business objectives
+
+Research objectives
+
+AI objectives
+
+HCXAI objectives
+
+Users
+
+Pain points
+
+Business workflow
+
+System workflow
+
+Decision workflow
+
+Data flow
+
+Explainability flow
+
+Human feedback flow
+
+Learning loop
+
+---
+
+# PART 2 — COMPLETE SYSTEM ARCHITECTURE
+
+Design the full enterprise architecture.
+
+Include:
+
+Frontend
+
+Backend
+
+API Gateway
+
+Authentication
+
+RBAC
+
+Loan Service
+
+Customer Service
+
+Document Service
+
+Model Service
+
+XAI Service
+
+Counterfactual Engine
+
+SHAP Engine
+
+LIME Engine
+
+Captum Service
+
+Similar Case Retrieval
+
+Embedding Service
+
+Vector Database
+
+Knowledge Base
+
+LLM Explanation Service
+
+Notification
+
+Audit
+
+Logging
+
+Monitoring
+
+Scheduler
+
+Retraining Pipeline
+
+CI/CD
+
+Docker
+
+Kubernetes
+
+Cloud Deployment
+
+Explain every component.
+
+Generate Mermaid architecture diagrams.
+
+---
+
+# PART 3 — AI MODEL CENTER
+
+The AI Model is the heart of the platform.
+
+Design a complete AI Model Center.
+
+Include:
+
+Model Registry
+
+Model Versioning
+
+Training
+
+Validation
+
+Evaluation
+
+Inference
+
+Calibration
+
+Monitoring
+
+Model Cards
+
+Feature Store
+
+Experiment Tracking
+
+Hyperparameter Search
+
+Model Comparison
+
+Champion-Challenger
+
+Online Monitoring
+
+Offline Evaluation
+
+Drift Detection
+
+Retraining
+
+Rollback
+
+Deployment Pipeline
+
+Visual dashboards for every component.
+
+---
+
+# PART 4 — EXPLAINABILITY CENTER (XAI)
+
+Design a dedicated Explainability Center.
+
+Support:
+
+Global Explainability
+
+Local Explainability
+
+Interactive Explainability
+
+Contrastive Explanation
+
+Counterfactual Explanation
+
+Example-based Explanation
+
+Prototype Explanation
+
+Rule-based Explanation
+
+Feature Attribution
+
+Feature Interaction
+
+Embedding Visualization
+
+Attention Visualization
+
+Decision Path Visualization
+
+Decision Provenance
+
+Generate beautiful visualizations.
+
+---
+
+# PART 5 — HUMAN-CENTERED XAI (HCXAI)
+
+This is the most important section.
+
+Design innovative HCXAI components including:
+
+Adaptive Explainability
+
+Personalized Explanation
+
+Role-aware Explanation
+
+Trust Calibration
+
+User Modeling
+
+Cognitive Load Adaptation
+
+Interactive Explanation
+
+Explanation Recommendation Engine
+
+Human Feedback Learning
+
+Explanation History
+
+Trust Dashboard
+
+Explanation Timeline
+
+Human Override Analysis
+
+Human Confidence
+
+AI Confidence
+
+Agreement Score
+
+Disagreement Analysis
+
+Human Decision Pattern Mining
+
+Explanation Satisfaction Score
+
+Explanation Quality Score
+
+Continuous Improvement Loop
+
+Clearly distinguish which modules are novel HCXAI contributions.
+
+---
+
+# PART 6 — INTERACTIVE WHAT-IF LAB
+
+Build an interactive simulation laboratory.
+
+Users can modify:
+
+Income
+
+Debt
+
+Loan Amount
+
+Collateral
+
+Employment
+
+Credit Score
+
+Loan Term
+
+Interest Rate
+
+Purpose
+
+Age
+
+Education
+
+Existing Loans
+
+Dependents
+
+Prediction must update instantly.
+
+Visualize:
+
+Risk change
+
+Decision change
+
+Probability change
+
+Confidence
+
+Required improvements
+
+Sensitivity
+
+Decision boundary
+
+---
+
+# PART 7 — SIMILAR CASE EXPLORER
+
+Design a Case-Based Reasoning module.
+
+Retrieve similar historical applicants.
+
+Show:
+
+Similarity score
+
+Past decisions
+
+Feature comparison
+
+Outcome
+
+Explanation comparison
+
+Embedding visualization
+
+Nearest neighbors
+
+---
+
+# PART 8 — FAIRNESS & RESPONSIBLE AI CENTER
+
+Design dashboards for:
+
+Demographic Parity
+
+Equal Opportunity
+
+Equalized Odds
+
+Calibration
+
+False Positive Rate
+
+False Negative Rate
+
+Bias Detection
+
+Fair Lending Monitoring
+
+Sensitive Attribute Analysis
+
+Regional Bias
+
+Gender Bias
+
+Age Bias
+
+Occupation Bias
+
+Income Bias
+
+Fairness over Time
+
+Mitigation Strategies
+
+---
+
+# PART 9 — MODEL MONITORING CENTER
+
+Design dashboards for:
+
+Accuracy
+
+Precision
+
+Recall
+
+ROC
+
+AUC
+
+Latency
+
+Inference Time
+
+Calibration Curve
+
+Feature Drift
+
+Data Drift
+
+Concept Drift
+
+Prediction Drift
+
+Explanation Drift
+
+Confidence Drift
+
+Alert System
+
+Root Cause Analysis
+
+---
+
+# PART 10 — HUMAN FEEDBACK CENTER
+
+Design collaboration interfaces.
+
+Support:
+
+Approve
+
+Reject
+
+Override
+
+Partial Approval
+
+Request Documents
+
+Comments
+
+Feedback Categories
+
+Confidence Rating
+
+Trust Rating
+
+Correction
+
+Learning Feedback
+
+Decision Justification
+
+Override Analytics
+
+---
+
+# PART 11 — CUSTOMER EXPLANATION PORTAL
+
+Generate explanations understandable by non-technical users.
+
+Use:
+
+Simple language
+
+Visual icons
+
+Risk meter
+
+Improvement suggestions
+
+Interactive simulation
+
+Appeal process
+
+Educational explanations
+
+Personalized recommendations
+
+---
+
+# PART 12 — FRONTEND DESIGN
+
+Design every page in detail.
+
+For each page include:
+
+Purpose
+
+Layout
+
+Components
+
+Charts
+
+Cards
+
+Tables
+
+Filters
+
+Buttons
+
+Micro-interactions
+
+Navigation
+
+Loading state
+
+Empty state
+
+Error state
+
+Responsive behavior
+
+Accessibility
+
+Keyboard shortcuts
+
+Design at least:
+
+Dashboard
+
+Loan Queue
+
+Loan Details
+
+Applicant Profile
+
+AI Decision
+
+Explanation Center
+
+HCXAI Center
+
+Counterfactual Lab
+
+Model Center
+
+Trust Dashboard
+
+Fairness Dashboard
+
+Analytics
+
+Audit
+
+Reports
+
+Notifications
+
+Settings
+
+Admin Panel
+
+Customer Portal
+
+---
+
+# PART 13 — BACKEND DESIGN
+
+Design enterprise backend using:
+
+Python
+
+FastAPI
+
+PostgreSQL
+
+Redis
+
+Kafka
+
+Celery
+
+Docker
+
+Kubernetes
+
+MinIO
+
+REST API
+
+WebSocket
+
+JWT
+
+OAuth2
+
+RBAC
+
+Microservices
+
+Include folder structure, services, message flow, caching, logging, security, scalability, and deployment strategy.
+
+---
+
+# PART 14 — DATABASE DESIGN
+
+Generate complete ER diagrams.
+
+Include tables for:
+
+Users
+
+Roles
+
+Permissions
+
+Applicants
+
+Loans
+
+Predictions
+
+Model Versions
+
+Feature Importance
+
+SHAP Values
+
+Counterfactuals
+
+Feedback
+
+Trust Scores
+
+Audit Logs
+
+Notifications
+
+Documents
+
+Explanation History
+
+Drift Reports
+
+Model Registry
+
+---
+
+# PART 15 — API DESIGN
+
+Design comprehensive REST APIs and WebSocket events for every module.
+
+Include request/response schemas, authentication, pagination, filtering, and versioning.
+
+---
+
+# PART 16 — DESIGN SYSTEM
+
+Create a complete design system:
+
+Color palette
+
+Typography
+
+Spacing
+
+Grid
+
+Icons
+
+Buttons
+
+Cards
+
+Tables
+
+Charts
+
+Forms
+
+Dialogs
+
+Badges
+
+Tags
+
+Status colors
+
+Animation
+
+Dark Mode
+
+Light Mode
+
+Accessibility Guidelines
+
+---
+
+# PART 17 — WIREFRAMES & HIGH-FIDELITY MOCKUPS
+
+Generate:
+
+Information Architecture
+
+User Flow
+
+Low-Fidelity Wireframes
+
+High-Fidelity Mockups
+
+Component hierarchy
+
+Navigation map
+
+Responsive layouts
+
+Design every screen with production-quality visuals.
+
+---
+
+# PART 18 — TECHNOLOGY STACK
+
+Recommend the best technologies for each module.
+
+Frontend:
+React, Next.js, TypeScript, Tailwind CSS, shadcn/ui, Framer Motion, TanStack Query, Zustand/Redux, D3.js, Apache ECharts.
+
+Backend:
+FastAPI, Python, PostgreSQL, Redis, Kafka, Celery, MinIO.
+
+AI/XAI:
+PyTorch, Scikit-learn, XGBoost, LightGBM, CatBoost, SHAP, LIME, Captum, Alibi, Dice-ML, FAISS/Milvus.
+
+MLOps:
+MLflow, Weights & Biases, Evidently AI, Prometheus, Grafana.
+
+Deployment:
+Docker, Kubernetes, NGINX, GitHub Actions, ArgoCD.
+
+---
+
+# FINAL REQUIREMENTS
+
+* Focus on HCXAI, XAI, and AI Model as the core of the platform.
+* Make the interface visually stunning and enterprise-grade.
+* Use Mermaid diagrams wherever appropriate.
+* Use tables, architecture diagrams, workflows, and UI specifications extensively.
+* Explain design decisions and justify why each HCXAI component improves transparency, trust, fairness, usability, and human-AI collaboration.
+* Produce a design that is immediately usable as the blueprint for implementation by a development team.

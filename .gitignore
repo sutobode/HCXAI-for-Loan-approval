@@ -1,0 +1,35 @@
+# Secrets - NEVER commit
+.env
+*.env
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Conda / virtualenv
+.conda/
+venv/
+env/
+ENV/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Model artifacts (regenerated via `python -m app.train_model`)
+backend/models/*.joblib
+
+# Logs
+*.log
