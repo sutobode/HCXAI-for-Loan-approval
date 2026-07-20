@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import {
   ShieldCheck,
@@ -11,6 +12,7 @@ import {
   Minus,
   Scale,
   Smile,
+  History,
 } from "lucide-react";
 
 import { PageHeader } from "@/components/layout/page-header";
@@ -85,6 +87,12 @@ export default function TrustDashboardPage() {
       <PageHeader
         title="Trust Dashboard"
         description="HCXAI User Modeler + Trust Calibrator: how well a user's decisions align with AI confidence."
+        actions={
+          <Button variant="outline" render={<Link href="/hcxai/explanation-history" />}>
+            <History className="size-4" />
+            Explanation history
+          </Button>
+        }
       />
 
       <Card>

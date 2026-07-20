@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { Moon, Sun, Bell } from "lucide-react";
+import { Moon, Sun } from "lucide-react";
 import { useTheme } from "next-themes";
 
 import { SidebarTrigger } from "@/components/ui/sidebar";
@@ -21,9 +21,14 @@ const PAGE_TITLES: Record<string, string> = {
   "/whatif": "What-If Lab",
   "/similar-cases": "Similar Case Explorer",
   "/trust": "Trust Dashboard",
+  "/hcxai/explanation-history": "Explanation History",
+  "/hcxai/override-analysis": "Human Override Analysis",
+  "/explainability/global": "Global Explainability",
   "/fairness": "Fairness & Responsible AI",
   "/monitoring": "Model Monitoring",
+  "/model-center": "AI Model Center",
   "/admin/users": "User Management",
+  "/admin/audit": "Audit Trail",
 };
 
 function resolveTitle(pathname: string): string {
@@ -51,9 +56,6 @@ export function TopBar() {
       </Breadcrumb>
 
       <div className="ml-auto flex items-center gap-1">
-        <Button variant="ghost" size="icon-sm" aria-label="Notifications">
-          <Bell className="size-4" />
-        </Button>
         <Button
           variant="ghost"
           size="icon-sm"

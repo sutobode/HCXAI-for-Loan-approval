@@ -17,6 +17,8 @@ import {
   GitCompareArrows,
   Cpu,
   ScrollText,
+  Layers,
+  History,
 } from "lucide-react";
 
 import {
@@ -57,11 +59,18 @@ const NAV_ITEMS: NavItem[] = [
   { title: "What-If Lab", href: "/whatif", icon: FlaskConical },
   { title: "Similar Cases", href: "/similar-cases", icon: Users2 },
   { title: "Trust Dashboard", href: "/trust", icon: ShieldCheck },
+  { title: "Explanation History", href: "/hcxai/explanation-history", icon: History },
   {
     title: "Override Analysis",
     href: "/hcxai/override-analysis",
     icon: GitCompareArrows,
     roles: ["admin", "risk_manager"],
+  },
+  {
+    title: "Global Explainability",
+    href: "/explainability/global",
+    icon: Layers,
+    roles: ["admin", "risk_manager", "loan_officer"],
   },
   {
     title: "Fairness Report",

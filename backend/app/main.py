@@ -1,26 +1,58 @@
 """
 HCXAI Loan Approval Backend - FastAPI application.
 
-Endpoints:
+Endpoints (grouped by capability; full schemas in app/schemas.py, browsable at /docs):
+
+Auth & RBAC:
 - GET  /health                    Liveness/readiness check (public)
 - POST /auth/register             Create a new user account (admin only)
 - POST /auth/login                Obtain a JWT access token
 - GET  /auth/me                   Current authenticated user's profile
 - GET  /auth/users                List all users (admin only)
+
+Predictions:
 - POST /predict                   Risk prediction only (admin/risk_manager/loan_officer)
 - POST /explain                   Full HCXAI explanation: SHAP + DeepSeek narrative +
-                                   progressive disclosure + persisted to SQLite (any authenticated user)
+                                   Explanation Recommendation Engine + persisted to SQLite
 - GET  /predictions                Paginated list of recent predictions (Loan Queue)
 - GET  /predictions/{id}           Single prediction detail incl. stored SHAP + feedback
-- POST /feedback                  Feedback Learner: record approve/reject/override,
-                                   updates Trust Calibrator + User Modeler
-- GET  /trust/{user_id}           Trust Dashboard for a given user
+
+XAI (Explainability Center):
+- POST /explain/lime               LIME-style local surrogate (independent SHAP cross-check)
+- POST /explain/counterfactual     Self-written minimal-change counterfactual search
+- GET  /explain/global             Aggregate SHAP feature importance across the dataset
+- POST /explain/quality            Stability / completeness / sparsity metrics for one explanation
+
+HCXAI (Human-Centered XAI Center):
+- POST /feedback                  Feedback Learner: record approve/reject/override
+- GET  /trust/{user_id}           Trust Dashboard (profile, calibration, trend, override direction, satisfaction)
 - GET  /feedback/analytics        Human Feedback Center: override analytics (admin/risk_manager)
+- GET  /hcxai/override-analysis   Human Override Analysis by AI confidence bucket
+- GET  /hcxai/satisfaction        Explanation Satisfaction Metrics
+- GET  /hcxai/explanation-history/{user_id}  Explanation History for a user
+- GET  /hcxai/provenance/{prediction_id}     Decision Provenance (full lineage)
+
+Fairness & Responsible AI:
+- GET  /fairness/report                       Demographic parity + four-fifths rule check
+- GET  /fairness/mitigation-recommendations   Bias mitigation threshold recommendations (admin/risk_manager)
+
+Model Monitoring:
+- GET  /monitoring/snapshot        Training metrics + feature drift + prediction drift
+
+AI Model Center (Model Registry):
+- GET  /model/versions             List all trained model versions
+- GET  /model/versions/active      Currently active (champion) version
+- POST /model/train                Train a new version (admin; Continuous Learning trigger)
+- POST /model/activate             Champion-Challenger switch (admin)
+- POST /model/compare              Side-by-side metric comparison between two versions
+
+AI Governance:
+- GET  /audit                      Paginated audit trail of platform actions (admin only)
+
+Interactive tools:
 - POST /whatif                    Interactive What-If Lab: single scenario comparison
 - POST /whatif/sensitivity        Interactive What-If Lab: sensitivity sweep
 - POST /similar-cases             Similar Case Explorer (k-NN over training data)
-- GET  /fairness/report           Fairness & Responsible AI Center report (admin/risk_manager)
-- GET  /monitoring/snapshot       Model Monitoring Center snapshot + drift check (admin/risk_manager)
 
 All endpoints except /health, /auth/login are protected by JWT bearer auth.
 RBAC roles: admin, risk_manager, loan_officer, customer.
