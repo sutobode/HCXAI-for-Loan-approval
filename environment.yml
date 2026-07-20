@@ -4,11 +4,23 @@ channels:
   - defaults
 dependencies:
   - python=3.11
-  - pandas=2.2.*
-  - numpy=1.26.*
-  - scikit-learn=1.4.*
   - pip=24.*
   - pip:
+      # NOTE: numpy/pandas/scipy/scikit-learn are ALL installed via pip
+      # (PyPI wheels), not conda-forge, and deliberately NOT mixed with
+      # conda-forge builds of the same packages. conda-forge's numpy/
+      # scikit-learn are linked against Intel MKL, while scipy previously
+      # had to be installed via pip (its conda-forge build's DLL was
+      # blocked by this machine's Windows Application Control policy).
+      # Mixing MKL-linked and OpenBLAS-linked native extensions in the same
+      # process caused intermittent, hard-to-diagnose native crashes in
+      # numpy.linalg / sklearn (silent process crashes, not Python
+      # exceptions). Installing the full numeric stack from PyPI wheels
+      # keeps everything on one consistent OpenBLAS build.
+      - numpy==1.26.4
+      - pandas==2.2.3
+      - scipy==1.12.0
+      - scikit-learn==1.4.2
       - fastapi==0.109.2
       - uvicorn[standard]==0.27.1
       - xgboost==2.0.3
@@ -19,3 +31,5 @@ dependencies:
       - pydantic==2.6.1
       - httpx==0.26.0
       - pytest==8.0.0
+      - pyjwt==2.8.0
+      - bcrypt==4.1.2

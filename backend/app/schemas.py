@@ -1,7 +1,7 @@
 """Pydantic request/response schemas for the HCXAI API."""
 from __future__ import annotations
 
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 
@@ -63,3 +63,123 @@ class ExplanationResponse(BaseModel):
 class ExplainRequest(BaseModel):
     application: LoanApplicationRequest
     role: Literal["customer", "loan_officer", "risk_analyst", "executive"] = "loan_officer"
+    user_id: str = Field(default="anonymous", description="Used by the HCXAI User Modeler")
+    detail_level: Literal["summary", "detailed", "technical"] | None = Field(
+        default=None,
+        description="Overrides the user's learned preferred detail level (Progressive Disclosure)",
+    )
+
+
+class HCXAIExplanationResponse(ExplanationResponse):
+    prediction_id: int
+    application_id: int
+    progressive: dict[str, Any]
+    user_profile: dict[str, Any]
+    explanation_strategy: dict[str, Any]
+
+
+class FeedbackRequest(BaseModel):
+    prediction_id: int
+    user_id: str = "anonymous"
+    action: Literal["approve", "reject", "override"]
+    human_decision: Literal["Approved", "Rejected"] | None = None
+    confidence_rating: int | None = Field(default=None, ge=1, le=5)
+    trust_rating: int | None = Field(default=None, ge=1, le=5)
+    comment: str | None = None
+
+
+class FeedbackResponse(BaseModel):
+    feedback_id: int
+    trust_calibration: dict[str, Any]
+
+
+class WhatIfRequest(BaseModel):
+    application: LoanApplicationRequest
+    overrides: dict[str, float | int | str] = Field(default_factory=dict)
+
+
+class SensitivitySweepRequest(BaseModel):
+    application: LoanApplicationRequest
+    feature: str
+    n_points: int = Field(default=10, ge=3, le=15)
+
+
+class SimilarCasesRequest(BaseModel):
+    application: LoanApplicationRequest
+    k: int = Field(default=5, ge=1, le=20)
+
+
+# ---------------------------------------------------------------------------
+# Auth & Users
+# ---------------------------------------------------------------------------
+
+UserRole = Literal["admin", "risk_manager", "loan_officer", "customer"]
+
+
+class RegisterRequest(BaseModel):
+    email: str = Field(min_length=3, max_length=255)
+    full_name: str = Field(min_length=1, max_length=255)
+    password: str = Field(min_length=8, max_length=128)
+    role: UserRole = "loan_officer"
+
+
+class LoginRequest(BaseModel):
+    email: str
+    password: str
+
+
+class UserResponse(BaseModel):
+    id: int
+    email: str
+    full_name: str
+    role: UserRole
+    is_active: bool
+    created_at: str
+
+
+class TokenResponse(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+    user: UserResponse
+
+
+class PaginatedPredictions(BaseModel):
+    items: list[dict[str, Any]]
+    total: int
+    limit: int
+    offset: int
+
+
+# ---------------------------------------------------------------------------
+# XAI: LIME, Counterfactuals, Global Explainability, Explanation Quality
+# ---------------------------------------------------------------------------
+
+class LimeExplainRequest(BaseModel):
+    application: LoanApplicationRequest
+
+
+class CounterfactualRequest(BaseModel):
+    application: LoanApplicationRequest
+    n_results: int = Field(default=3, ge=1, le=5)
+
+
+class ExplanationQualityRequest(BaseModel):
+    application: LoanApplicationRequest
+
+
+# ---------------------------------------------------------------------------
+# AI Model Center: Model Registry
+# ---------------------------------------------------------------------------
+
+class TrainModelRequest(BaseModel):
+    notes: str | None = None
+    activate: bool = True
+
+
+class ActivateModelRequest(BaseModel):
+    version_label: str
+
+
+class CompareModelsRequest(BaseModel):
+    version_a: str
+    version_b: str

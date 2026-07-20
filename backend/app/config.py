@@ -21,9 +21,18 @@ class Settings:
         str(PROJECT_ROOT / "loan_approval_dataset.csv"),
     )
     MODEL_DIR: Path = BACKEND_DIR / "models"
+    # Versioned model artifacts (AI Model Center / Model Registry):
+    # each training run writes to VERSIONS_DIR/<version_label>/{model.joblib,encoders.joblib}
+    # and registers itself in the SQLite `model_versions` table (see app/model_registry.py).
+    VERSIONS_DIR: Path = MODEL_DIR / "versions"
+    # Legacy flat paths kept only for the one-time migration check in model_registry.py.
     MODEL_PATH: Path = MODEL_DIR / "loan_model.joblib"
     ENCODERS_PATH: Path = MODEL_DIR / "encoders.joblib"
     METADATA_PATH: Path = MODEL_DIR / "metadata.json"
+
+    # Local persistence (SQLite file, no DB server required)
+    DATA_DIR: Path = BACKEND_DIR / "data"
+    SQLITE_PATH: Path = Path(os.getenv("SQLITE_PATH", str(DATA_DIR / "hcxai.db")))
 
     # DeepSeek LLM configuration
     DEEPSEEK_API_KEY: str | None = os.getenv("DEEPSEEK_API_KEY")
@@ -36,6 +45,13 @@ class Settings:
     # API
     API_TITLE: str = "HCXAI Loan Approval Backend"
     API_VERSION: str = "0.1.0"
+
+    # CORS: comma-separated list of allowed origins (frontend dev server, prod domain)
+    CORS_ORIGINS: list[str] = [
+        origin.strip()
+        for origin in os.getenv("CORS_ORIGINS", "http://localhost:3000").split(",")
+        if origin.strip()
+    ]
 
     @property
     def deepseek_enabled(self) -> bool:

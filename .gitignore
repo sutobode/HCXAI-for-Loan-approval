@@ -28,8 +28,13 @@ ENV/
 .DS_Store
 Thumbs.db
 
-# Model artifacts (regenerated via `python -m app.train_model`)
+# Model artifacts (regenerated via `python -m app.model_registry`)
 backend/models/*.joblib
+backend/models/*.json
+backend/models/versions/
+
+# Local SQLite database + data dir (regenerated on first run, contains local demo data)
+backend/data/
 
 # Logs
 *.log

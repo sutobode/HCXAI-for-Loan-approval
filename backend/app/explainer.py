@@ -1,7 +1,8 @@
 """
 SHAP-based local explanation for individual loan predictions.
 
-Loads the trained model once (module-level singleton pattern via get_explainer)
+Loads the currently active model version from the Model Registry
+(app.model_registry) once (module-level singleton pattern via get_explainer)
 and produces per-feature attribution values for a single application.
 """
 from __future__ import annotations
@@ -9,11 +10,9 @@ from __future__ import annotations
 import logging
 from functools import lru_cache
 
-import joblib
 import pandas as pd
 import shap
 
-from .config import settings
 from .data_processing import FEATURE_COLUMNS
 
 logger = logging.getLogger(__name__)
@@ -35,14 +34,14 @@ READABLE_FEATURE_NAMES = {
 
 class LoanExplainer:
     def __init__(self):
-        if not settings.MODEL_PATH.exists():
-            raise FileNotFoundError(
-                f"Model not found at {settings.MODEL_PATH}. Run training first: "
-                "python -m app.train_model"
-            )
-        self.model = joblib.load(settings.MODEL_PATH)
-        self.encoders = joblib.load(settings.ENCODERS_PATH)
+        from .model_registry import get_active_version_artifacts
+
+        self.model, self.encoders, self.version = get_active_version_artifacts()
         self.tree_explainer = shap.TreeExplainer(self.model)
+
+    @property
+    def version_label(self) -> str:
+        return self.version["version_label"]
 
     def predict(self, features_df: pd.DataFrame) -> dict:
         proba = float(self.model.predict_proba(features_df[FEATURE_COLUMNS])[0, 1])
