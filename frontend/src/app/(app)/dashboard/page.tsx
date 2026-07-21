@@ -9,6 +9,10 @@ import {
   ShieldAlert,
   TrendingUp,
   ArrowRight,
+  UserSearch,
+  Brain,
+  ShieldCheck,
+  Sparkles,
 } from "lucide-react";
 
 import { PageHeader } from "@/components/layout/page-header";
@@ -112,6 +116,60 @@ export default function DashboardPage() {
           icon={Gauge}
           tone="warning"
         />
+      </div>
+
+      {/* CTA: Loan Queue + XAI highlight */}
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <Card className="border-primary/30 bg-primary/5">
+          <CardContent className="flex items-center gap-4 p-5">
+            <div className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-primary/10">
+              <UserSearch className="size-6 text-primary" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="font-medium">Loan Queue — Khách hàng</p>
+              <p className="mt-0.5 text-sm text-muted-foreground">
+                Chọn khách hàng, bấm chấm điểm. Không cần nhập tay.
+              </p>
+            </div>
+            <Button size="sm" nativeButton={false} render={<Link href="/applicants" />}>
+              Mở <ArrowRight className="ml-1 size-3.5" />
+            </Button>
+          </CardContent>
+        </Card>
+
+        <Card className="border-amber-500/30 bg-amber-500/5">
+          <CardContent className="flex items-center gap-4 p-5">
+            <div className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-amber-500/10">
+              <Brain className="size-6 text-amber-600" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="font-medium">Giải thích AI (SHAP, LIME)</p>
+              <p className="mt-0.5 text-sm text-muted-foreground">
+                Xem AI quyết định dựa trên yếu tố nào, với từng hồ sơ cụ thể.
+              </p>
+            </div>
+            <Button variant="outline" size="sm" nativeButton={false} render={<Link href="/explainability/global" />}>
+              Xem
+            </Button>
+          </CardContent>
+        </Card>
+
+        <Card className="border-emerald-500/30 bg-emerald-500/5">
+          <CardContent className="flex items-center gap-4 p-5">
+            <div className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-emerald-500/10">
+              <ShieldCheck className="size-6 text-emerald-600" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="font-medium">Bảng Tin cậy (HCXAI)</p>
+              <p className="mt-0.5 text-sm text-muted-foreground">
+                AI có đáng tin không? Xem lịch sử đồng ý/ghi đè của bạn.
+              </p>
+            </div>
+            <Button variant="outline" size="sm" nativeButton={false} render={<Link href="/trust" />}>
+              Xem
+            </Button>
+          </CardContent>
+        </Card>
       </div>
 
       <Card>

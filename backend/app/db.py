@@ -9,7 +9,8 @@ zero external services required — matching the "no DB server" constraint
 for this demo/dev environment.
 
 Tables:
-- applications        : submitted loan application feature snapshots
+- applicants           : customer/applicant identity (Loan Queue, Applicant Profile)
+- applications        : submitted loan application feature snapshots, optionally linked to an applicant
 - predictions          : model prediction + SHAP summary for an application
 - feedback             : human feedback/override on a prediction (Feedback Learner)
 - user_profiles        : per-user cognitive model (HCXAI User Modeler)
@@ -37,8 +38,25 @@ CREATE TABLE IF NOT EXISTS users (
     created_at TEXT NOT NULL
 );
 
+-- Applicant / Customer (business entity distinct from a single application
+-- snapshot). This is what lets a loan officer browse a "Loan Queue" of real
+-- people instead of hand-typing every field for every prediction. One
+-- applicant can have zero, one, or many applications over time.
+CREATE TABLE IF NOT EXISTS applicants (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    full_name TEXT NOT NULL,
+    phone TEXT,
+    email TEXT,
+    date_of_birth TEXT,
+    occupation TEXT,
+    address TEXT,
+    notes TEXT,
+    created_at TEXT NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS applications (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
+    applicant_id INTEGER REFERENCES applicants(id),
     created_at TEXT NOT NULL,
     features_json TEXT NOT NULL
 );
@@ -149,6 +167,10 @@ def _run_lightweight_migrations(conn: sqlite3.Connection) -> None:
     if "model_version" not in existing_columns:
         conn.execute("ALTER TABLE predictions ADD COLUMN model_version TEXT DEFAULT 'unknown'")
 
+    existing_app_columns = {row[1] for row in conn.execute("PRAGMA table_info(applications)").fetchall()}
+    if "applicant_id" not in existing_app_columns:
+        conn.execute("ALTER TABLE applications ADD COLUMN applicant_id INTEGER REFERENCES applicants(id)")
+
 
 def init_db(db_path: Path | None = None) -> None:
     path = db_path or settings.SQLITE_PATH
@@ -174,14 +196,129 @@ def get_connection(db_path: Path | None = None) -> Iterator[sqlite3.Connection]:
 
 
 # ---------------------------------------------------------------------------
+# Applicants (Customers) -- Loan Queue source data
+# ---------------------------------------------------------------------------
+
+def create_applicant(
+    full_name: str,
+    phone: str | None = None,
+    email: str | None = None,
+    date_of_birth: str | None = None,
+    occupation: str | None = None,
+    address: str | None = None,
+    notes: str | None = None,
+) -> dict[str, Any]:
+    with get_connection() as conn:
+        cur = conn.execute(
+            """INSERT INTO applicants (full_name, phone, email, date_of_birth, occupation, address, notes, created_at)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
+            (full_name, phone, email, date_of_birth, occupation, address, notes, _now()),
+        )
+        applicant_id = cur.lastrowid
+    # Read back after commit so the row is visible
+    return get_applicant(applicant_id)  # type: ignore[return-value]
+
+
+def get_applicant(applicant_id: int) -> dict[str, Any] | None:
+    with get_connection() as conn:
+        row = conn.execute("SELECT * FROM applicants WHERE id = ?", (applicant_id,)).fetchone()
+        return dict(row) if row else None
+
+
+def _applicant_latest_status(conn: sqlite3.Connection, applicant_id: int) -> dict[str, Any]:
+    """
+    Loan Queue status for one applicant: their most recent prediction (if
+    any), and how many applications they have in total. Kept as a small
+    helper so list_applicants() can batch this per row without N+1 queries
+    turning into unreadable SQL.
+    """
+    row = conn.execute(
+        """SELECT p.id AS prediction_id, p.prediction, p.confidence, p.created_at
+           FROM applications a
+           JOIN predictions p ON p.application_id = a.id
+           WHERE a.applicant_id = ?
+           ORDER BY p.id DESC LIMIT 1""",
+        (applicant_id,),
+    ).fetchone()
+    total_applications = conn.execute(
+        "SELECT COUNT(*) AS c FROM applications WHERE applicant_id = ?", (applicant_id,)
+    ).fetchone()["c"]
+    return {
+        "latest_prediction": dict(row) if row else None,
+        "total_applications": total_applications,
+    }
+
+
+def list_applicants(limit: int = 20, offset: int = 0, search: str | None = None) -> dict[str, Any]:
+    """
+    Loan Queue: paginated, searchable list of applicants with a quick
+    "have they been scored yet, and what was the last outcome" summary,
+    so a loan officer can immediately see who still needs attention.
+    """
+    with get_connection() as conn:
+        if search:
+            like = f"%{search.strip()}%"
+            where = "WHERE full_name LIKE ? OR phone LIKE ? OR email LIKE ?"
+            params: tuple[Any, ...] = (like, like, like)
+        else:
+            where = ""
+            params = ()
+
+        total = conn.execute(f"SELECT COUNT(*) AS c FROM applicants {where}", params).fetchone()["c"]
+        rows = conn.execute(
+            f"SELECT * FROM applicants {where} ORDER BY id DESC LIMIT ? OFFSET ?",
+            (*params, limit, offset),
+        ).fetchall()
+
+        items = []
+        for r in rows:
+            applicant = dict(r)
+            applicant.update(_applicant_latest_status(conn, applicant["id"]))
+            items.append(applicant)
+
+    return {"items": items, "total": total, "limit": limit, "offset": offset}
+
+
+def get_applicant_detail(applicant_id: int) -> dict[str, Any] | None:
+    """Applicant Profile: the applicant record plus every application/prediction they have on file."""
+    applicant = get_applicant(applicant_id)
+    if applicant is None:
+        return None
+
+    with get_connection() as conn:
+        app_rows = conn.execute(
+            "SELECT * FROM applications WHERE applicant_id = ? ORDER BY id DESC", (applicant_id,)
+        ).fetchall()
+
+        applications = []
+        for row in app_rows:
+            application = dict(row)
+            application["features"] = json.loads(application.pop("features_json"))
+            pred_row = conn.execute(
+                "SELECT id, prediction, approval_probability, risk_score, confidence, created_at "
+                "FROM predictions WHERE application_id = ? ORDER BY id DESC LIMIT 1",
+                (application["id"],),
+            ).fetchone()
+            application["latest_prediction"] = dict(pred_row) if pred_row else None
+            applications.append(application)
+
+    return {"applicant": applicant, "applications": applications}
+
+
+def count_applicants() -> int:
+    with get_connection() as conn:
+        return conn.execute("SELECT COUNT(*) AS c FROM applicants").fetchone()["c"]
+
+
+# ---------------------------------------------------------------------------
 # Applications & Predictions
 # ---------------------------------------------------------------------------
 
-def save_application(features: dict[str, Any]) -> int:
+def save_application(features: dict[str, Any], applicant_id: int | None = None) -> int:
     with get_connection() as conn:
         cur = conn.execute(
-            "INSERT INTO applications (created_at, features_json) VALUES (?, ?)",
-            (_now(), json.dumps(features)),
+            "INSERT INTO applications (applicant_id, created_at, features_json) VALUES (?, ?, ?)",
+            (applicant_id, _now(), json.dumps(features)),
         )
         return cur.lastrowid
 
@@ -218,14 +355,26 @@ def save_prediction(
 
 def get_prediction(prediction_id: int) -> dict[str, Any] | None:
     with get_connection() as conn:
-        row = conn.execute("SELECT * FROM predictions WHERE id = ?", (prediction_id,)).fetchone()
+        row = conn.execute(
+            """SELECT p.*, a.applicant_id AS applicant_id, ap.full_name AS applicant_name
+               FROM predictions p
+               LEFT JOIN applications a ON a.id = p.application_id
+               LEFT JOIN applicants ap ON ap.id = a.applicant_id
+               WHERE p.id = ?""",
+            (prediction_id,),
+        ).fetchone()
         return dict(row) if row else None
 
 
 def list_recent_predictions(limit: int = 50) -> list[dict[str, Any]]:
     with get_connection() as conn:
         rows = conn.execute(
-            "SELECT * FROM predictions ORDER BY id DESC LIMIT ?", (limit,)
+            """SELECT p.*, a.applicant_id AS applicant_id, ap.full_name AS applicant_name
+               FROM predictions p
+               LEFT JOIN applications a ON a.id = p.application_id
+               LEFT JOIN applicants ap ON ap.id = a.applicant_id
+               ORDER BY p.id DESC LIMIT ?""",
+            (limit,),
         ).fetchall()
         return [dict(r) for r in rows]
 
@@ -865,14 +1014,18 @@ def get_decision_provenance(prediction_id: int) -> dict[str, Any] | None:
         ).fetchone()
 
     application = dict(application_row) if application_row else None
+    applicant = None
     if application:
         application["features"] = json.loads(application.pop("features_json"))
+        if application.get("applicant_id"):
+            applicant = get_applicant(application["applicant_id"])
 
     model_version = get_model_version_by_label(prediction["model_version"]) if prediction.get("model_version") else None
 
     return {
         "prediction_id": prediction_id,
         "application": application,
+        "applicant": applicant,
         "model_version": model_version,
         "prediction_summary": {
             "prediction": prediction["prediction"],

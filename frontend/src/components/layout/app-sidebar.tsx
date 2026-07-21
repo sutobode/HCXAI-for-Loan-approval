@@ -20,6 +20,7 @@ import {
   Layers,
   History,
   Settings,
+  UserSearch,
 } from "lucide-react";
 
 import {
@@ -55,6 +56,7 @@ interface NavItem {
 
 const NAV_ITEMS: NavItem[] = [
   { title: "Tổng quan", href: "/dashboard", icon: LayoutDashboard },
+  { title: "Khách hàng", href: "/applicants", icon: UserSearch },
   { title: "Danh sách hồ sơ vay", href: "/applications", icon: ListChecks },
   { title: "Nộp hồ sơ vay", href: "/applications/new", icon: FilePlus2 },
   { title: "Phòng thí nghiệm Giả định", href: "/whatif", icon: FlaskConical },

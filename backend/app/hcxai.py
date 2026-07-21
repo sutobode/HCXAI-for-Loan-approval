@@ -190,12 +190,15 @@ def record_prediction_and_context(
     narrative: str,
     narrative_model: str,
     model_version: str = "unknown",
+    applicant_id: int | None = None,
 ) -> tuple[int, int]:
     """
     Persist the application + prediction, returning (application_id, prediction_id).
     Also records a prediction snapshot (Decision Provenance + Prediction Drift input).
+    If `applicant_id` is given, the application is linked to that Applicant
+    (Loan Queue) record instead of being an anonymous, disconnected submission.
     """
-    application_id = db.save_application(features)
+    application_id = db.save_application(features, applicant_id=applicant_id)
     prediction_id = db.save_prediction(
         application_id,
         prediction,

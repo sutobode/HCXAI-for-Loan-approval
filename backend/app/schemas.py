@@ -68,6 +68,10 @@ class ExplainRequest(BaseModel):
         default=None,
         description="Overrides the user's learned preferred detail level (Progressive Disclosure)",
     )
+    applicant_id: int | None = Field(
+        default=None,
+        description="Links this prediction to an existing Applicant (Loan Queue) record, if scoring one",
+    )
 
 
 class HCXAIExplanationResponse(ExplanationResponse):
@@ -170,6 +174,44 @@ class CounterfactualRequest(BaseModel):
 
 class ExplanationQualityRequest(BaseModel):
     application: LoanApplicationRequest
+
+
+# ---------------------------------------------------------------------------
+# Applicants (Customers) -- Loan Queue
+# ---------------------------------------------------------------------------
+
+class ApplicantResponse(BaseModel):
+    id: int
+    full_name: str
+    phone: str | None = None
+    email: str | None = None
+    date_of_birth: str | None = None
+    occupation: str | None = None
+    address: str | None = None
+    notes: str | None = None
+    created_at: str
+
+
+class ApplicantQueueItem(ApplicantResponse):
+    total_applications: int
+    latest_prediction: dict[str, Any] | None = None
+
+
+class PaginatedApplicants(BaseModel):
+    items: list[ApplicantQueueItem]
+    total: int
+    limit: int
+    offset: int
+
+
+class CreateApplicantRequest(BaseModel):
+    full_name: str = Field(min_length=1, max_length=255)
+    phone: str | None = Field(default=None, max_length=32)
+    email: str | None = Field(default=None, max_length=255)
+    date_of_birth: str | None = None
+    occupation: str | None = Field(default=None, max_length=255)
+    address: str | None = Field(default=None, max_length=500)
+    notes: str | None = Field(default=None, max_length=1000)
 
 
 # ---------------------------------------------------------------------------

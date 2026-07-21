@@ -5,6 +5,7 @@
  */
 import { apiClient } from "@/lib/api";
 import type {
+  ApplicantDetail,
   CounterfactualResult,
   DecisionProvenance,
   DetailLevel,
@@ -22,6 +23,7 @@ import type {
   ModelVersion,
   MonitoringSnapshot,
   OverrideAnalysisResult,
+  PaginatedApplicants,
   PaginatedAuditLog,
   PaginatedPredictions,
   PredictionDetail,
@@ -35,6 +37,26 @@ import type {
   UserRole,
   WhatIfResult,
 } from "@/lib/types";
+
+// --------------------------------------------------------------------------
+// Applicants (Customers) -- Loan Queue
+// --------------------------------------------------------------------------
+
+export async function listApplicants(
+  limit = 20,
+  offset = 0,
+  search?: string
+): Promise<PaginatedApplicants> {
+  const { data } = await apiClient.get<PaginatedApplicants>("/applicants", {
+    params: { limit, offset, ...(search ? { search } : {}) },
+  });
+  return data;
+}
+
+export async function getApplicantDetail(id: number): Promise<ApplicantDetail> {
+  const { data } = await apiClient.get<ApplicantDetail>(`/applicants/${id}`);
+  return data;
+}
 
 // --------------------------------------------------------------------------
 // Auth
@@ -86,6 +108,7 @@ export async function explain(params: {
   role: ExplainRole;
   user_id: string;
   detail_level?: DetailLevel;
+  applicant_id?: number;
 }): Promise<HCXAIExplanationResult> {
   const { data } = await apiClient.post<HCXAIExplanationResult>("/explain", params);
   return data;

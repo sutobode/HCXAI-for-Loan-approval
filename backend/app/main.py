@@ -10,10 +10,16 @@ Auth & RBAC:
 - GET  /auth/me                   Current authenticated user's profile
 - GET  /auth/users                List all users (admin only)
 
+Applicants (Customers):
+- GET  /applicants                 Loan Queue: paginated, searchable list of applicants
+- POST /applicants                 Register a new applicant (admin/risk_manager/loan_officer)
+- GET  /applicants/{id}             Applicant Profile: applicant + all their applications/predictions
+
 Predictions:
 - POST /predict                   Risk prediction only (admin/risk_manager/loan_officer)
 - POST /explain                   Full HCXAI explanation: SHAP + DeepSeek narrative +
                                    Explanation Recommendation Engine + persisted to SQLite
+                                   (optionally linked to an applicant via applicant_id)
 - GET  /predictions                Paginated list of recent predictions (Loan Queue)
 - GET  /predictions/{id}           Single prediction detail incl. stored SHAP + feedback
 
@@ -84,9 +90,11 @@ from .model_registry import compare_versions, train_new_version
 from .monitoring import get_monitoring_snapshot
 from .schemas import (
     ActivateModelRequest,
+    ApplicantResponse,
     ChangePasswordRequest,
     CompareModelsRequest,
     CounterfactualRequest,
+    CreateApplicantRequest,
     ExplainRequest,
     ExplanationQualityRequest,
     FeedbackRequest,
@@ -95,6 +103,7 @@ from .schemas import (
     LimeExplainRequest,
     LoanApplicationRequest,
     LoginRequest,
+    PaginatedApplicants,
     PaginatedPredictions,
     PredictionResponse,
     RegisterRequest,
@@ -320,6 +329,7 @@ def explain(
         narrative=narrative_result["narrative"],
         narrative_model=narrative_result["model"],
         model_version=explainer.version_label,
+        applicant_id=request.applicant_id,
     )
     db.log_audit_event(
         user_id=current_user["email"],
@@ -384,6 +394,59 @@ def get_prediction_detail(
     pred["shap_result"] = _json.loads(pred.pop("shap_json"))
     pred["feedback"] = db.get_feedback_for_prediction(prediction_id)
     return pred
+
+
+@app.get("/applicants", response_model=PaginatedApplicants)
+def list_applicants(
+    limit: int = 20,
+    offset: int = 0,
+    search: str | None = None,
+    current_user: dict = Depends(auth.require_roles("admin", "risk_manager", "loan_officer")),
+):
+    """
+    Loan Queue: the primary entry point for staff to find a customer and
+    run a prediction for them, instead of hand-typing a blank form every
+    time. Search matches full name, phone, or email (case-insensitive
+    substring).
+    """
+    limit = max(1, min(limit, 100))
+    return db.list_applicants(limit=limit, offset=offset, search=search)
+
+
+@app.post("/applicants", response_model=ApplicantResponse, status_code=201)
+def create_applicant(
+    request: CreateApplicantRequest,
+    current_user: dict = Depends(auth.require_roles("admin", "risk_manager", "loan_officer")),
+):
+    """Register a new applicant/customer record (does not submit an application by itself)."""
+    applicant = db.create_applicant(
+        full_name=request.full_name,
+        phone=request.phone,
+        email=request.email,
+        date_of_birth=request.date_of_birth,
+        occupation=request.occupation,
+        address=request.address,
+        notes=request.notes,
+    )
+    db.log_audit_event(
+        user_id=current_user["email"],
+        action="applicant.create",
+        resource_type="applicant",
+        resource_id=str(applicant["id"]),
+    )
+    return applicant
+
+
+@app.get("/applicants/{applicant_id}")
+def get_applicant_detail(
+    applicant_id: int,
+    current_user: dict = Depends(auth.require_roles("admin", "risk_manager", "loan_officer")),
+):
+    """Applicant Profile: the applicant plus every application/prediction on file for them."""
+    result = db.get_applicant_detail(applicant_id)
+    if result is None:
+        raise HTTPException(status_code=404, detail=f"Applicant {applicant_id} not found")
+    return result
 
 
 @app.post("/feedback", response_model=FeedbackResponse)

@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import { Sparkles, ThumbsDown, ThumbsUp, MessageSquare } from "lucide-react";
@@ -25,7 +26,7 @@ import { GlossaryTerm } from "@/components/ui/glossary-term";
 import { RiskGauge } from "@/components/charts/risk-gauge";
 import { ShapChart } from "@/components/charts/shap-chart";
 import { LoanApplicationForm } from "@/components/loan/loan-application-form";
-import { explain, submitFeedback } from "@/lib/endpoints";
+import { explain, submitFeedback, getApplicantDetail } from "@/lib/endpoints";
 import { getApiErrorMessage } from "@/lib/api";
 import { useAuthStore } from "@/stores/auth-store";
 import type { ExplainRole, HCXAIExplanationResult, LoanApplication } from "@/lib/types";
@@ -56,10 +57,53 @@ const ROLE_OPTIONS: { value: ExplainRole; label: string }[] = [
 
 export default function NewApplicationPage() {
   const user = useAuthStore((s) => s.user);
+  const searchParams = useSearchParams();
+  const applicantIdParam = searchParams.get("applicant_id");
+
   const [role, setRole] = useState<ExplainRole>("loan_officer");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [result, setResult] = useState<HCXAIExplanationResult | null>(null);
   const [feedbackSent, setFeedbackSent] = useState(false);
+
+  // Applicant context for prefill + display
+  const [applicantName, setApplicantName] = useState<string | null>(null);
+  const [applicantId, setApplicantId] = useState<number | null>(
+    applicantIdParam ? Number(applicantIdParam) : null
+  );
+  const [prefillValues, setPrefillValues] = useState<LoanApplication | null>(null);
+
+  useEffect(() => {
+    if (!applicantIdParam) return;
+    const id = Number(applicantIdParam);
+    if (Number.isNaN(id)) return;
+    setApplicantId(id);
+
+    getApplicantDetail(id)
+      .then((detail) => {
+        setApplicantName(detail.applicant.full_name);
+        // If applicant has existing applications, prefill from the most recent one
+        if (detail.applications.length > 0) {
+          const latest = detail.applications[0];
+          const f = latest.features;
+          setPrefillValues({
+            no_of_dependents: Number(f.no_of_dependents) || 0,
+            education: (f.education as "Graduate" | "Not Graduate") || "Graduate",
+            self_employed: (f.self_employed as "Yes" | "No") || "No",
+            income_annum: Number(f.income_annum) || 0,
+            loan_amount: Number(f.loan_amount) || 0,
+            loan_term: Number(f.loan_term) || 12,
+            cibil_score: Number(f.cibil_score) || 600,
+            residential_assets_value: Number(f.residential_assets_value) || 0,
+            commercial_assets_value: Number(f.commercial_assets_value) || 0,
+            luxury_assets_value: Number(f.luxury_assets_value) || 0,
+            bank_asset_value: Number(f.bank_asset_value) || 0,
+          });
+        }
+      })
+      .catch(() => {
+        // Applicant not found -- continue without prefill
+      });
+  }, [applicantIdParam]);
 
   async function handleSubmit(values: LoanApplication) {
     setIsSubmitting(true);
@@ -70,6 +114,7 @@ export default function NewApplicationPage() {
         application: values,
         role,
         user_id: user?.email ?? "anonymous",
+        applicant_id: applicantId ?? undefined,
       });
       setResult(explanation);
       toast.success("Đã tạo giải thích");
@@ -100,8 +145,12 @@ export default function NewApplicationPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Nộp hồ sơ vay"
-        description="Chạy mô hình, xem giải thích dựa trên SHAP, và nhận diễn giải bằng ngôn ngữ tự nhiên từ DeepSeek phù hợp với vai trò của bạn."
+        title={applicantName ? `Chấm điểm: ${applicantName}` : "Nộp hồ sơ vay"}
+        description={
+          applicantName
+            ? "Thông tin đã được điền sẵn từ hồ sơ khách hàng. Bạn có thể chỉnh sửa trước khi chấm điểm."
+            : "Chạy mô hình, xem giải thích dựa trên SHAP, và nhận diễn giải bằng ngôn ngữ tự nhiên từ DeepSeek phù hợp với vai trò của bạn."
+        }
       />
 
       <div className="grid gap-6 lg:grid-cols-[1.1fr_1fr]">
@@ -128,6 +177,8 @@ export default function NewApplicationPage() {
             </div>
             <Separator />
             <LoanApplicationForm
+              key={prefillValues ? "prefilled" : "default"}
+              defaultValues={prefillValues ?? undefined}
               onSubmit={handleSubmit}
               isSubmitting={isSubmitting}
               submitLabel={isSubmitting ? "Đang chấm điểm hồ sơ..." : "Nhận quyết định & giải thích từ AI"}

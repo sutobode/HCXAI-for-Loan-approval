@@ -529,3 +529,54 @@ export interface PaginatedAuditLog {
   limit: number;
   offset: number;
 }
+
+// --------------------------------------------------------------------------
+// Applicants (Customers) -- Loan Queue
+// --------------------------------------------------------------------------
+
+export interface Applicant {
+  id: number;
+  full_name: string;
+  phone: string | null;
+  email: string | null;
+  date_of_birth: string | null;
+  occupation: string | null;
+  address: string | null;
+  notes: string | null;
+  created_at: string;
+}
+
+export interface ApplicantQueueItem extends Applicant {
+  total_applications: number;
+  latest_prediction: {
+    prediction_id: number;
+    prediction: "Approved" | "Rejected";
+    confidence: number;
+    created_at: string;
+  } | null;
+}
+
+export interface PaginatedApplicants {
+  items: ApplicantQueueItem[];
+  total: number;
+  limit: number;
+  offset: number;
+}
+
+export interface ApplicantDetail {
+  applicant: Applicant;
+  applications: {
+    id: number;
+    applicant_id: number;
+    created_at: string;
+    features: Record<string, number | string>;
+    latest_prediction: {
+      id: number;
+      prediction: "Approved" | "Rejected";
+      approval_probability: number;
+      risk_score: number;
+      confidence: number;
+      created_at: string;
+    } | null;
+  }[];
+}

@@ -16,6 +16,7 @@ import {
 
 const PAGE_TITLES: Record<string, string> = {
   "/dashboard": "Tổng quan",
+  "/applicants": "Khách hàng",
   "/applications": "Danh sách hồ sơ vay",
   "/applications/new": "Nộp hồ sơ vay",
   "/whatif": "Phòng thí nghiệm Giả định",
