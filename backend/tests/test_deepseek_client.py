@@ -38,7 +38,7 @@ FAKE_SHAP_RESULT = {
 
 def test_build_template_explanation_uses_only_provided_numbers():
     narrative = build_template_explanation(FAKE_PREDICTION, FAKE_SHAP_RESULT, role="loan_officer")
-    assert "Approved" in narrative
+    assert "Được duyệt" in narrative
     assert "Credit score (CIBIL)" in narrative
     assert "780" in narrative
 
@@ -49,4 +49,4 @@ def test_generate_narrative_falls_back_when_no_api_key():
         result = generate_narrative_explanation(FAKE_PREDICTION, FAKE_SHAP_RESULT, role="customer")
 
     assert result["model"] == "template-fallback"
-    assert "Approved" in result["narrative"]
+    assert "Được duyệt" in result["narrative"]

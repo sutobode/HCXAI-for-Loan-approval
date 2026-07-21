@@ -145,6 +145,9 @@ frontend/  (Next.js dashboard consuming every endpoint above through a typed
 3. `explainer.py` computes SHAP contributions for every feature.
 4. `deepseek_client.py` generates a role-aware natural-language narrative
    (falls back to a deterministic template if no API key is configured).
+   The narrative is written in Vietnamese to match the localized frontend,
+   while domain-specific technical terms (SHAP, LIME, CIBIL, etc.) are kept
+   in English, matching the convention used throughout the UI.
 5. `hcxai.py::recommend_explanation_strategy()` looks at the user's cognitive
    profile, the cognitive load of this specific explanation, and the user's
    trust state, and decides: which detail level to show, whether to suggest a

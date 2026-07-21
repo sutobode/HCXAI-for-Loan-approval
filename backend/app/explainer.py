@@ -18,17 +18,17 @@ from .data_processing import FEATURE_COLUMNS
 logger = logging.getLogger(__name__)
 
 READABLE_FEATURE_NAMES = {
-    "no_of_dependents": "Number of dependents",
-    "income_annum": "Annual income",
-    "loan_amount": "Loan amount requested",
-    "loan_term": "Loan term (months)",
-    "cibil_score": "Credit score (CIBIL)",
-    "residential_assets_value": "Residential assets value",
-    "commercial_assets_value": "Commercial assets value",
-    "luxury_assets_value": "Luxury assets value",
-    "bank_asset_value": "Bank asset value",
-    "education": "Education level",
-    "self_employed": "Self-employed status",
+    "no_of_dependents": "Số người phụ thuộc",
+    "income_annum": "Thu nhập hàng năm",
+    "loan_amount": "Số tiền vay đề nghị",
+    "loan_term": "Thời hạn vay (tháng)",
+    "cibil_score": "Điểm tín dụng (CIBIL)",
+    "residential_assets_value": "Tài sản bất động sản để ở",
+    "commercial_assets_value": "Tài sản bất động sản thương mại",
+    "luxury_assets_value": "Tài sản cao cấp",
+    "bank_asset_value": "Tài sản tại ngân hàng",
+    "education": "Trình độ học vấn",
+    "self_employed": "Tình trạng tự kinh doanh",
 }
 
 

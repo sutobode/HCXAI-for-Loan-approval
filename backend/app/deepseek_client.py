@@ -21,23 +21,37 @@ from .config import settings
 
 logger = logging.getLogger(__name__)
 
+# All prompts require the response to be written in Vietnamese, since the
+# platform's frontend is fully localized to Vietnamese. Domain-specific
+# technical terms (SHAP, LIME, model/metric names, etc.) are explicitly
+# allowed to stay in English within the Vietnamese text, matching the same
+# convention used throughout the UI (Vietnamese prose, English jargon).
+_VI_INSTRUCTION = (
+    "Trả lời hoàn toàn bằng tiếng Việt. Các thuật ngữ chuyên ngành (ví dụ: SHAP, "
+    "LIME, Counterfactual, CIBIL, tên các chỉ số mô hình) có thể giữ nguyên tiếng Anh, "
+    "phần diễn giải còn lại phải bằng tiếng Việt tự nhiên, dễ hiểu."
+)
+
 ROLE_PROMPTS = {
     "customer": (
-        "You are explaining a loan decision to a non-technical bank customer. "
-        "Use simple, warm, plain language. Avoid jargon. Focus on the top 2-3 "
-        "factors and give one concrete, actionable suggestion if the loan was rejected."
+        "Bạn đang giải thích một quyết định vay cho khách hàng không có chuyên môn kỹ thuật. "
+        "Dùng ngôn ngữ đơn giản, gần gũi, dễ hiểu, tránh thuật ngữ phức tạp. Tập trung vào "
+        "2-3 yếu tố quan trọng nhất và đưa ra một gợi ý cụ thể, khả thi nếu hồ sơ bị từ chối. "
+        + _VI_INSTRUCTION
     ),
     "loan_officer": (
-        "You are briefing a loan officer who needs a quick, risk-focused summary "
-        "to support their decision. Be concise and reference the concrete numbers."
+        "Bạn đang báo cáo tóm tắt cho một chuyên viên tín dụng cần thông tin nhanh, tập trung "
+        "vào rủi ro để hỗ trợ ra quyết định. Viết ngắn gọn và trích dẫn số liệu cụ thể. "
+        + _VI_INSTRUCTION
     ),
     "risk_analyst": (
-        "You are writing for a risk analyst. Provide a precise, technical summary "
-        "referencing SHAP contribution magnitudes and how features interact with risk."
+        "Bạn đang viết cho một chuyên viên phân tích rủi ro. Cung cấp tóm tắt chính xác, mang "
+        "tính kỹ thuật, có trích dẫn độ lớn của SHAP contribution và cách các yếu tố tương tác "
+        "với rủi ro. " + _VI_INSTRUCTION
     ),
     "executive": (
-        "You are writing a one-paragraph executive summary. Focus on business impact, "
-        "not technical detail."
+        "Bạn đang viết một đoạn tóm tắt ngắn cho cấp lãnh đạo. Tập trung vào tác động kinh "
+        "doanh, không đi sâu vào chi tiết kỹ thuật. " + _VI_INSTRUCTION
     ),
 }
 
@@ -65,14 +79,16 @@ def _get_client() -> OpenAI | None:
 def build_template_explanation(prediction: dict, shap_result: dict, role: str) -> str:
     """Deterministic, no-LLM fallback explanation built directly from SHAP values."""
     top = shap_result["contributions"][:3]
+    decision_vi = "Được duyệt" if prediction["prediction"] == "Approved" else "Bị từ chối"
     reasons = "; ".join(
-        f"{c['display_name']} ({c['value']}) {'helped' if c['shap_contribution'] > 0 else 'hurt'} approval"
+        f"{c['display_name']} ({c['value']}) "
+        f"{'hỗ trợ việc duyệt' if c['shap_contribution'] > 0 else 'làm giảm khả năng duyệt'}"
         for c in top
     )
     return (
-        f"Prediction: {prediction['prediction']} "
-        f"(approval probability {prediction['approval_probability']:.0%}). "
-        f"Main factors: {reasons}."
+        f"Kết quả dự đoán: {decision_vi} "
+        f"(xác suất duyệt {prediction['approval_probability']:.0%}). "
+        f"Các yếu tố chính: {reasons}."
     )
 
 
@@ -94,17 +110,17 @@ def generate_narrative_explanation(prediction: dict, shap_result: dict, role: st
     top_factors = shap_result["contributions"][:5]
 
     user_prompt = (
-        f"Model prediction: {prediction['prediction']} "
-        f"(approval probability: {prediction['approval_probability']:.2%}, "
-        f"confidence: {prediction['confidence']:.2%}).\n"
-        "Top contributing factors (feature, value, SHAP contribution, direction):\n"
+        f"Kết quả dự đoán của mô hình: {prediction['prediction']} "
+        f"(xác suất duyệt: {prediction['approval_probability']:.2%}, "
+        f"độ tin cậy: {prediction['confidence']:.2%}).\n"
+        "Các yếu tố ảnh hưởng chính (tên yếu tố, giá trị, mức ảnh hưởng SHAP, chiều ảnh hưởng):\n"
         + "\n".join(
             f"- {f['display_name']}: value={f['value']}, "
             f"shap={f['shap_contribution']:.3f}, direction={f['direction']}"
             for f in top_factors
         )
-        + "\n\nWrite a short explanation (max 120 words) using ONLY the numbers above. "
-        "Do not invent any figures not provided."
+        + "\n\nViết một đoạn giải thích ngắn (tối đa 120 từ) CHỈ dựa trên các số liệu trên. "
+        "Không tự thêm số liệu nào không được cung cấp."
     )
 
     try:
