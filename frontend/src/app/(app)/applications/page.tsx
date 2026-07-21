@@ -44,7 +44,7 @@ export default function ApplicationsPage() {
         title="Loan Queue"
         description="Browse and filter all scored loan applications."
         actions={
-          <Button render={<Link href="/applications/new" />}>
+          <Button nativeButton={false} render={<Link href="/applications/new" />}>
             <FilePlus2 className="size-4" />
             New application
           </Button>
@@ -123,7 +123,7 @@ export default function ApplicationsPage() {
                       {new Date(p.created_at).toLocaleString()}
                     </TableCell>
                     <TableCell className="text-right">
-                      <Button variant="ghost" size="sm" render={<Link href={`/applications/${p.id}`} />}>
+                      <Button variant="ghost" size="sm" nativeButton={false} render={<Link href={`/applications/${p.id}`} />}>
                         View
                       </Button>
                     </TableCell>

@@ -29,6 +29,7 @@ const PAGE_TITLES: Record<string, string> = {
   "/model-center": "AI Model Center",
   "/admin/users": "User Management",
   "/admin/audit": "Audit Trail",
+  "/settings": "Settings",
 };
 
 function resolveTitle(pathname: string): string {

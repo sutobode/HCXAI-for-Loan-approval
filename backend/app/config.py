@@ -40,7 +40,11 @@ class Settings:
     DEEPSEEK_MODEL: str = os.getenv("DEEPSEEK_MODEL", "deepseek-chat")
     DEEPSEEK_MAX_TOKENS: int = int(os.getenv("DEEPSEEK_MAX_TOKENS", "400"))
     DEEPSEEK_TEMPERATURE: float = float(os.getenv("DEEPSEEK_TEMPERATURE", "0.3"))
-    DEEPSEEK_TIMEOUT_SECONDS: float = float(os.getenv("DEEPSEEK_TIMEOUT_SECONDS", "20"))
+    # Kept short deliberately: the OpenAI SDK client is created with
+    # max_retries=0 (see deepseek_client.py), so this is the full worst-case
+    # wait before falling back to the template explanation -- not
+    # this-value-times-retries.
+    DEEPSEEK_TIMEOUT_SECONDS: float = float(os.getenv("DEEPSEEK_TIMEOUT_SECONDS", "8"))
 
     # API
     API_TITLE: str = "HCXAI Loan Approval Backend"

@@ -485,6 +485,11 @@ def list_users(limit: int = 100, offset: int = 0) -> list[dict[str, Any]]:
         return [dict(r) for r in rows]
 
 
+def update_user_password(user_id: int, hashed_password: str) -> None:
+    with get_connection() as conn:
+        conn.execute("UPDATE users SET hashed_password = ? WHERE id = ?", (hashed_password, user_id))
+
+
 def count_users() -> int:
     with get_connection() as conn:
         return conn.execute("SELECT COUNT(*) AS c FROM users").fetchone()["c"]

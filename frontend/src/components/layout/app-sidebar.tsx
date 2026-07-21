@@ -19,6 +19,7 @@ import {
   ScrollText,
   Layers,
   History,
+  Settings,
 } from "lucide-react";
 
 import {
@@ -92,6 +93,7 @@ const NAV_ITEMS: NavItem[] = [
   },
   { title: "Admin · Users", href: "/admin/users", icon: Users2, roles: ["admin"] },
   { title: "Admin · Audit Trail", href: "/admin/audit", icon: ScrollText, roles: ["admin"] },
+  { title: "Settings", href: "/settings", icon: Settings },
 ];
 
 function initialsFromName(name: string) {

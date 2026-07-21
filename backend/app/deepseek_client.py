@@ -49,7 +49,16 @@ def _get_client() -> OpenAI | None:
     if not settings.deepseek_enabled:
         return None
     if _client is None:
-        _client = OpenAI(api_key=settings.DEEPSEEK_API_KEY, base_url=settings.DEEPSEEK_BASE_URL)
+        # max_retries=0: the OpenAI SDK retries transient errors (including
+        # connection/read timeouts) twice by default, which meant a single
+        # unreachable-network call could block a request for
+        # ~3 x DEEPSEEK_TIMEOUT_SECONDS before falling back to the template
+        # explanation. We want a fast, predictable fallback instead.
+        _client = OpenAI(
+            api_key=settings.DEEPSEEK_API_KEY,
+            base_url=settings.DEEPSEEK_BASE_URL,
+            max_retries=0,
+        )
     return _client
 
 

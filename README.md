@@ -392,6 +392,7 @@ schemas are defined in `backend/app/schemas.py` and are browsable live at
 | POST | `/auth/login` | Public | Exchange email/password for a JWT |
 | GET | `/auth/me` | any | Current authenticated user's profile |
 | GET | `/auth/users` | admin | List all users |
+| POST | `/auth/change-password` | any | Rotate your own password (requires current password) |
 
 ### Predictions
 
@@ -416,12 +417,19 @@ schemas are defined in `backend/app/schemas.py` and are browsable live at
 | Method | Path | Auth | Description |
 |---|---|---|---|
 | POST | `/feedback` | any | Record approve/reject/override + optional ratings; updates Trust Calibrator + User Modeler |
-| GET | `/trust/{user_id}` | any | Trust Dashboard: profile, calibration, trend, override direction, satisfaction |
+| GET | `/trust/{user_id}` | any, **own data only**\* | Trust Dashboard: profile, calibration, trend, override direction, satisfaction |
 | GET | `/feedback/analytics` | admin, risk_manager | Platform-wide override analytics |
 | GET | `/hcxai/override-analysis` | admin, risk_manager | Disagreement rate bucketed by AI confidence; optional `user_id` filter |
-| GET | `/hcxai/satisfaction` | any | Aggregate explanation satisfaction ratings; optional `user_id` filter |
-| GET | `/hcxai/explanation-history/{user_id}` | any | Every prediction a user has interacted with |
+| GET | `/hcxai/satisfaction` | any; **own data only**\* if `user_id` passed | Aggregate explanation satisfaction ratings; omit `user_id` for a platform-wide aggregate |
+| GET | `/hcxai/explanation-history/{user_id}` | any, **own data only**\* | Every prediction a user has interacted with |
 | GET | `/hcxai/provenance/{prediction_id}` | any | Full decision lineage: application, model version, feedback events |
+
+\* **Ownership-checked**: any authenticated user may view their own
+`user_id`'s data; viewing another user's requires `admin` or `risk_manager`
+(enforced server-side by `main._require_self_or_privileged`, not just hidden
+in the UI). Without this, any authenticated user — including `customer` —
+could otherwise read another user's trust profile or explanation history by
+knowing their email.
 
 ### Fairness & Responsible AI
 
@@ -511,6 +519,7 @@ the backend independently enforces RBAC on every underlying API call.
 | `/similar-cases` | Similar Case Explorer | All | k-NN similar historical applications |
 | `/admin/users` | User Management | admin | Create/list users, assign roles |
 | `/admin/audit` | Audit Trail | admin | Paginated, filterable platform action log |
+| `/settings` | Settings | All | Change your own password; flags the default admin account if still in use |
 
 ---
 
@@ -576,11 +585,11 @@ cd backend
 pytest -v
 ```
 
-56 tests across 9 files:
+63 tests across 9 files:
 
 | File | Covers |
 |---|---|
-| `test_auth.py` | JWT auth, RBAC enforcement, default admin bootstrap |
+| `test_auth.py` | JWT auth, RBAC enforcement, default admin bootstrap, ownership checks on per-user HCXAI endpoints, change-password flow |
 | `test_data_processing.py` | Dataset loading/encoding |
 | `test_deepseek_client.py` | Narrative generation (mocked, no network dependency) |
 | `test_explainer.py` | SHAP prediction + explanation correctness (approved/rejected cases, contribution ordering) |
@@ -620,10 +629,20 @@ npm run build      # production build + lint
   `.env.local.example` (with placeholder values) are committed.
 - The default admin credentials are a well-known placeholder
   (`admin@hcxai.local` / `ChangeMe123!`) and **must** be changed before any
-  non-local use.
+  non-local use. Use `POST /auth/change-password` or the `/settings` page
+  (which shows a warning banner while the default admin account is detected).
 - All write-side HCXAI adaptation logic (`hcxai.py`) is simple, auditable
   if/else heuristics by design — there is no black-box meta-model deciding
   what a user sees, which matters for the platform's own governance story.
+- Per-user HCXAI endpoints (Trust Dashboard, Explanation History, Explanation
+  Satisfaction when scoped to a `user_id`) enforce an ownership check
+  server-side: a user can only read their own data unless they hold the
+  `admin` or `risk_manager` role. See `main._require_self_or_privileged`.
+- The DeepSeek client is created with `max_retries=0`. Combined with
+  `DEEPSEEK_TIMEOUT_SECONDS` (default 8s), this bounds the worst-case wait for
+  a single unreachable-network call to ~8s before falling back to the
+  template explanation, instead of `timeout × (1 + sdk_retries)` (previously
+  up to ~60-70s with the SDK's default 2 retries).
 
 ---
 
@@ -677,6 +696,7 @@ demo_seminar1/
     │   │       ├── model-center/
     │   │       ├── whatif/
     │   │       ├── similar-cases/
+    │   │       ├── settings/
     │   │       └── admin/ (users/, audit/)
     │   ├── components/
     │   │   ├── charts/          # risk-gauge, shap-chart
@@ -716,7 +736,13 @@ demo_seminar1/
   deployment; would need a background worker for frequent retraining at scale.
 - **Single-tenant.** There is no multi-tenant data isolation; all users share
   one SQLite database and one active model version.
-- **Notification system**: the top bar previously had a placeholder
-  notification bell with no backing logic; it has been removed rather than
-  shipped as dead UI. A real notification system (e.g. for drift alerts or
-  fairness violations) would be a natural next feature.
+- **No notification system.** There is currently no in-app notification
+  center (e.g. for drift alerts or fairness violations); this would be a
+  natural next feature. An earlier placeholder notification bell with no
+  backing logic was removed rather than shipped as dead UI.
+- **Audit trail covers write/read actions selectively, not every GET.**
+  All state-changing and computationally significant actions are logged
+  (auth, explain, feedback, model train/activate/compare, XAI tools,
+  fairness/monitoring reads, password changes), but simple list/detail reads
+  (e.g. `GET /predictions/{id}`) are not, to keep the audit log focused on
+  decisions and analyses rather than every page view.

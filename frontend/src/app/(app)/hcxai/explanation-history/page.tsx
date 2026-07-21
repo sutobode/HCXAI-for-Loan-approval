@@ -83,7 +83,7 @@ export default function ExplanationHistoryPage() {
                       {item.narrative_model ? ` · ${item.narrative_model}` : ""}
                     </p>
                   </div>
-                  <Button variant="ghost" size="sm" render={<Link href={`/applications/${item.id}`} />}>
+                  <Button variant="ghost" size="sm" nativeButton={false} render={<Link href={`/applications/${item.id}`} />}>
                     View
                     <ArrowRight className="size-4" />
                   </Button>

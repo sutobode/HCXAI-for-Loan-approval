@@ -78,7 +78,7 @@ export default function DashboardPage() {
         title={`Welcome back${user ? `, ${user.full_name.split(" ")[0]}` : ""}`}
         description="Overview of recent loan decisions and platform health."
         actions={
-          <Button render={<Link href="/applications/new" />}>
+          <Button nativeButton={false} render={<Link href="/applications/new" />}>
             <FilePlus2 className="size-4" />
             New application
           </Button>
@@ -120,7 +120,7 @@ export default function DashboardPage() {
             <CardTitle>Recent decisions</CardTitle>
             <CardDescription>The most recently scored loan applications.</CardDescription>
           </div>
-          <Button variant="ghost" size="sm" render={<Link href="/applications" />}>
+          <Button variant="ghost" size="sm" nativeButton={false} render={<Link href="/applications" />}>
             View all
             <ArrowRight className="size-4" />
           </Button>
@@ -163,7 +163,7 @@ export default function DashboardPage() {
                       {new Date(p.created_at).toLocaleString()}
                     </TableCell>
                     <TableCell className="text-right">
-                      <Button variant="ghost" size="sm" render={<Link href={`/applications/${p.id}`} />}>
+                      <Button variant="ghost" size="sm" nativeButton={false} render={<Link href={`/applications/${p.id}`} />}>
                         View
                       </Button>
                     </TableCell>

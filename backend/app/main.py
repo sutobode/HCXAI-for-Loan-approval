@@ -84,6 +84,7 @@ from .model_registry import compare_versions, train_new_version
 from .monitoring import get_monitoring_snapshot
 from .schemas import (
     ActivateModelRequest,
+    ChangePasswordRequest,
     CompareModelsRequest,
     CounterfactualRequest,
     ExplainRequest,
@@ -161,6 +162,28 @@ def _get_explainer_or_503():
         raise HTTPException(status_code=503, detail=str(exc)) from exc
 
 
+_PRIVILEGED_ROLES = ("admin", "risk_manager")
+
+
+def _require_self_or_privileged(current_user: dict, target_user_id: str) -> None:
+    """
+    Ownership check for per-user HCXAI endpoints (Trust Dashboard, Explanation
+    History, Explanation Satisfaction): any authenticated user may view their
+    *own* data, but viewing another user's personal profile/history/ratings
+    requires admin or risk_manager. Without this, any authenticated user
+    (including 'customer') could read another user's trust profile or
+    explanation history just by knowing their email.
+    """
+    if current_user["role"] in _PRIVILEGED_ROLES:
+        return
+    if current_user["email"].lower() == target_user_id.lower():
+        return
+    raise HTTPException(
+        status_code=403,
+        detail="You may only view your own data. Admin or risk_manager role is required to view another user's.",
+    )
+
+
 @app.get("/health")
 def health():
     return {
@@ -210,6 +233,23 @@ def login(request: LoginRequest):
 @app.get("/auth/me", response_model=UserResponse)
 def get_me(current_user: dict = Depends(auth.get_current_user)):
     return UserResponse(**{**current_user, "is_active": bool(current_user["is_active"])})
+
+
+@app.post("/auth/change-password", status_code=204)
+def change_password(
+    request: ChangePasswordRequest,
+    current_user: dict = Depends(auth.require_authenticated),
+):
+    """
+    Let any authenticated user (including the default admin account) rotate
+    their own password. Requires the current password to prevent a stolen/
+    left-open session from silently locking out the real owner.
+    """
+    if not auth.verify_password(request.current_password, current_user["hashed_password"]):
+        raise HTTPException(status_code=401, detail="Current password is incorrect")
+
+    db.update_user_password(current_user["id"], auth.hash_password(request.new_password))
+    db.log_audit_event(user_id=current_user["email"], action="auth.change_password")
 
 
 @app.get("/auth/users", response_model=list[UserResponse])
@@ -355,7 +395,12 @@ def submit_feedback(
 
 @app.get("/trust/{user_id}")
 def trust_dashboard(user_id: str, current_user: dict = Depends(auth.require_authenticated)):
-    """Trust Dashboard (HCXAI_PLATFORM_DESIGN.md Part 5): profile + trust calibration."""
+    """
+    Trust Dashboard (HCXAI_PLATFORM_DESIGN.md Part 5): profile + trust calibration.
+    Ownership-checked: a user can only view their own dashboard unless they
+    are admin/risk_manager (see _require_self_or_privileged).
+    """
+    _require_self_or_privileged(current_user, user_id)
     return hcxai.get_trust_dashboard(user_id)
 
 
@@ -375,9 +420,13 @@ def whatif(
     """Interactive What-If Lab: compare base application vs. overridden scenario."""
     explainer = _get_explainer_or_503()
     try:
-        return run_whatif(explainer, request.application.model_dump(), request.overrides)
+        result = run_whatif(explainer, request.application.model_dump(), request.overrides)
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
+    db.log_audit_event(
+        user_id=current_user["email"], action="whatif", details={"overrides": request.overrides}
+    )
+    return result
 
 
 @app.post("/whatif/sensitivity")
@@ -388,11 +437,15 @@ def whatif_sensitivity(
     """Interactive What-If Lab: sensitivity sweep of the approval boundary for one feature."""
     explainer = _get_explainer_or_503()
     try:
-        return sensitivity_sweep(
+        result = sensitivity_sweep(
             explainer, request.application.model_dump(), request.feature, request.n_points
         )
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
+    db.log_audit_event(
+        user_id=current_user["email"], action="whatif.sensitivity", details={"feature": request.feature}
+    )
+    return result
 
 
 @app.post("/similar-cases")
@@ -406,6 +459,7 @@ def similar_cases(
 
     index = get_similar_case_index()
     cases = index.find_similar(features_df, k=request.k)
+    db.log_audit_event(user_id=current_user["email"], action="similar_cases", details={"k": request.k})
     return {"cases": cases, "outcome_distribution": index.outcome_distribution(cases)}
 
 
@@ -443,7 +497,9 @@ def explain_lime(
     explainer = _get_explainer_or_503()
     features_df = encode_single_application(request.application.model_dump(), explainer.encoders)
     lime = get_lime_explainer()
-    return lime.explain(features_df)
+    result = lime.explain(features_df)
+    db.log_audit_event(user_id=current_user["email"], action="explain.lime")
+    return result
 
 
 @app.post("/explain/counterfactual")
@@ -457,7 +513,9 @@ def explain_counterfactual(
     search; see app/counterfactual.py for the algorithm and rationale).
     """
     explainer = _get_explainer_or_503()
-    return find_counterfactuals(explainer, request.application.model_dump(), n_results=request.n_results)
+    result = find_counterfactuals(explainer, request.application.model_dump(), n_results=request.n_results)
+    db.log_audit_event(user_id=current_user["email"], action="explain.counterfactual")
+    return result
 
 
 @app.get("/explain/global")
@@ -476,7 +534,9 @@ def explain_quality(
 ):
     """Explanation Quality: stability, SHAP-additivity completeness, and sparsity metrics."""
     explainer = _get_explainer_or_503()
-    return compute_explanation_quality_report(explainer, request.application.model_dump())
+    result = compute_explanation_quality_report(explainer, request.application.model_dump())
+    db.log_audit_event(user_id=current_user["email"], action="explain.quality")
+    return result
 
 
 # ---------------------------------------------------------------------------
@@ -500,7 +560,14 @@ def satisfaction_metrics(
     user_id: str | None = None,
     current_user: dict = Depends(auth.require_authenticated),
 ):
-    """Explanation Satisfaction Metrics: aggregate trust/confidence ratings."""
+    """
+    Explanation Satisfaction Metrics: aggregate trust/confidence ratings.
+    Omitting user_id returns a platform-wide aggregate (no personal data
+    leak). Passing a specific user_id is ownership-checked: only that user
+    or an admin/risk_manager may view it.
+    """
+    if user_id:
+        _require_self_or_privileged(current_user, user_id)
     return db.get_satisfaction_metrics(user_id)
 
 
@@ -509,7 +576,12 @@ def explanation_history(
     user_id: str,
     current_user: dict = Depends(auth.require_authenticated),
 ):
-    """Explanation History: every prediction a user has interacted with."""
+    """
+    Explanation History: every prediction a user has interacted with.
+    Ownership-checked: a user can only view their own history unless they
+    are admin/risk_manager (see _require_self_or_privileged).
+    """
+    _require_self_or_privileged(current_user, user_id)
     return db.get_explanation_history(user_id)
 
 
@@ -540,6 +612,7 @@ def fairness_mitigation_recommendations(
     """
     explainer = _get_explainer_or_503()
     report = compute_fairness_report(explainer)
+    db.log_audit_event(user_id=current_user["email"], action="fairness.mitigation_recommendations")
     return report["mitigation_recommendations"]
 
 
@@ -605,9 +678,15 @@ def compare_model_versions(
 ):
     """Model Comparison Dashboard: side-by-side metric comparison between two versions."""
     try:
-        return compare_versions(request.version_a, request.version_b)
+        result = compare_versions(request.version_a, request.version_b)
     except ValueError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
+    db.log_audit_event(
+        user_id=current_user["email"],
+        action="model.compare",
+        details={"version_a": request.version_a, "version_b": request.version_b},
+    )
+    return result
 
 
 # ---------------------------------------------------------------------------

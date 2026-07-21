@@ -88,7 +88,7 @@ export default function TrustDashboardPage() {
         title="Trust Dashboard"
         description="HCXAI User Modeler + Trust Calibrator: how well a user's decisions align with AI confidence."
         actions={
-          <Button variant="outline" render={<Link href="/hcxai/explanation-history" />}>
+          <Button variant="outline" nativeButton={false} render={<Link href="/hcxai/explanation-history" />}>
             <History className="size-4" />
             Explanation history
           </Button>

@@ -65,6 +65,13 @@ export async function registerUser(payload: {
   return data;
 }
 
+export async function changePassword(payload: {
+  current_password: string;
+  new_password: string;
+}): Promise<void> {
+  await apiClient.post("/auth/change-password", payload);
+}
+
 // --------------------------------------------------------------------------
 // Predictions & Explanations
 // --------------------------------------------------------------------------
