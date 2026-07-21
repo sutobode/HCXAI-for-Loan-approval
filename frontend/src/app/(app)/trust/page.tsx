@@ -22,6 +22,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
+import { GlossaryTerm } from "@/components/ui/glossary-term";
 import { getFeedbackAnalytics, getTrustDashboard } from "@/lib/endpoints";
 import { useAuthStore } from "@/stores/auth-store";
 import type { TrustCalibration, TrustTrend } from "@/lib/types";
@@ -86,7 +87,12 @@ export default function TrustDashboardPage() {
     <div className="space-y-6">
       <PageHeader
         title="Bảng Tin cậy"
-        description="User Modeler + Trust Calibrator: mức độ quyết định của người dùng khớp với độ tin cậy của AI."
+        description={
+          <>
+            <GlossaryTerm term="User Modeler" /> + <GlossaryTerm term="Trust Calibrator" />: mức độ quyết định của
+            người dùng khớp với độ tin cậy của AI.
+          </>
+        }
         actions={
           <Button variant="outline" nativeButton={false} render={<Link href="/hcxai/explanation-history" />}>
             <History className="size-4" />
@@ -144,7 +150,9 @@ export default function TrustDashboardPage() {
           <Card>
             <CardHeader>
               <CardTitle>Hồ sơ nhận thức</CardTitle>
-              <CardDescription>Được học từ lịch sử tương tác (User Modeler)</CardDescription>
+              <CardDescription>
+                Được học từ lịch sử tương tác (<GlossaryTerm term="User Modeler" />)
+              </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-2 gap-4">

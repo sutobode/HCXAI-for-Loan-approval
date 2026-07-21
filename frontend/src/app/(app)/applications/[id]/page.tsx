@@ -10,6 +10,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { GlossaryTerm } from "@/components/ui/glossary-term";
 import { RiskGauge } from "@/components/charts/risk-gauge";
 import { ShapChart } from "@/components/charts/shap-chart";
 import {
@@ -126,7 +128,9 @@ export default function ApplicationDetailPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Feature Contribution (SHAP)</CardTitle>
+          <CardTitle>
+            Feature Contribution (<GlossaryTerm term="SHAP" />)
+          </CardTitle>
           <CardDescription>Giá trị cơ sở: {data.shap_result.base_value.toFixed(3)}</CardDescription>
         </CardHeader>
         <CardContent>
@@ -134,132 +138,152 @@ export default function ApplicationDetailPage() {
         </CardContent>
       </Card>
 
-      <div className="grid gap-6 lg:grid-cols-3">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
-              <GitBranch className="size-4 text-primary" />
-              Đối chiếu với LIME
-            </CardTitle>
-            <CardDescription>Mô hình thay thế cục bộ độc lập — nếu khớp với SHAP thì càng đáng tin cậy.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {!limeMutation.data ? (
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={!applicationFeatures || limeMutation.isPending}
-                onClick={() => limeMutation.mutate()}
-              >
-                {limeMutation.isPending ? "Đang chạy LIME..." : "Chạy giải thích LIME"}
-              </Button>
-            ) : (
-              <>
-                <p className="text-xs text-muted-foreground">
-                  Độ khớp R&sup2;: {limeMutation.data.fidelity_r2 !== null ? limeMutation.data.fidelity_r2.toFixed(3) : "—"}
-                </p>
-                <ul className="space-y-1.5 text-sm">
-                  {limeMutation.data.contributions.slice(0, 5).map((c) => (
-                    <li key={c.feature} className="flex items-center justify-between gap-2">
-                      <span className="truncate">{c.display_name}</span>
-                      <Badge variant={c.direction === "increases_approval" ? "default" : "destructive"}>
-                        {c.lime_weight > 0 ? "+" : ""}
-                        {c.lime_weight.toFixed(3)}
-                      </Badge>
-                    </li>
-                  ))}
-                </ul>
-              </>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
-              <Scale className="size-4 text-primary" />
-              Counterfactual
-            </CardTitle>
-            <CardDescription>Những thay đổi nhỏ nhất có thể đổi ngược quyết định này.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {!counterfactualMutation.data ? (
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={!applicationFeatures || counterfactualMutation.isPending}
-                onClick={() => counterfactualMutation.mutate()}
-              >
-                {counterfactualMutation.isPending ? "Đang tìm kiếm..." : "Tìm Counterfactual"}
-              </Button>
-            ) : counterfactualMutation.data.counterfactuals.length === 0 ? (
-              <p className="text-sm text-muted-foreground">Không tìm được Counterfactual trong phạm vi tìm kiếm.</p>
-            ) : (
-              <div className="space-y-3">
-                {counterfactualMutation.data.counterfactuals.map((cf, i) => (
-                  <div key={i} className="rounded-lg border p-2.5 text-sm">
-                    <p className="mb-1 font-medium">
-                      → {cf.resulting_decision === "Approved" ? "Được duyệt" : "Bị từ chối"} ({Math.round(cf.resulting_probability * 100)}%)
+      <Collapsible className="rounded-xl border">
+        <CollapsibleTrigger className="p-4">
+          <span className="text-sm font-medium">
+            Công cụ phân tích chuyên sâu (LIME, Counterfactual, Explanation Quality)
+          </span>
+        </CollapsibleTrigger>
+        <CollapsibleContent>
+          <div className="grid gap-6 border-t p-4 pt-4 lg:grid-cols-3">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <GitBranch className="size-4 text-primary" />
+                  Đối chiếu với <GlossaryTerm term="LIME" />
+                </CardTitle>
+                <CardDescription>
+                  Mô hình thay thế cục bộ độc lập — nếu khớp với SHAP thì càng đáng tin cậy.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {!limeMutation.data ? (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={!applicationFeatures || limeMutation.isPending}
+                    onClick={() => limeMutation.mutate()}
+                  >
+                    {limeMutation.isPending ? "Đang chạy LIME..." : "Chạy giải thích LIME"}
+                  </Button>
+                ) : (
+                  <>
+                    <p className="text-xs text-muted-foreground">
+                      Độ khớp R&sup2;: {limeMutation.data.fidelity_r2 !== null ? limeMutation.data.fidelity_r2.toFixed(3) : "—"}
                     </p>
-                    {cf.changes.map((ch) => (
-                      <p key={ch.feature} className="text-xs text-muted-foreground">
-                        {ch.display_name}: {ch.original_value} → {ch.suggested_value}
-                      </p>
+                    <ul className="space-y-1.5 text-sm">
+                      {limeMutation.data.contributions.slice(0, 5).map((c) => (
+                        <li key={c.feature} className="flex items-center justify-between gap-2">
+                          <span className="truncate">{c.display_name}</span>
+                          <Badge variant={c.direction === "increases_approval" ? "default" : "destructive"}>
+                            {c.lime_weight > 0 ? "+" : ""}
+                            {c.lime_weight.toFixed(3)}
+                          </Badge>
+                        </li>
+                      ))}
+                    </ul>
+                  </>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <Scale className="size-4 text-primary" />
+                  <GlossaryTerm term="Counterfactual" />
+                </CardTitle>
+                <CardDescription>Những thay đổi nhỏ nhất có thể đổi ngược quyết định này.</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {!counterfactualMutation.data ? (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={!applicationFeatures || counterfactualMutation.isPending}
+                    onClick={() => counterfactualMutation.mutate()}
+                  >
+                    {counterfactualMutation.isPending ? "Đang tìm kiếm..." : "Tìm Counterfactual"}
+                  </Button>
+                ) : counterfactualMutation.data.counterfactuals.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">Không tìm được Counterfactual trong phạm vi tìm kiếm.</p>
+                ) : (
+                  <div className="space-y-3">
+                    {counterfactualMutation.data.counterfactuals.map((cf, i) => (
+                      <div key={i} className="rounded-lg border p-2.5 text-sm">
+                        <p className="mb-1 font-medium">
+                          → {cf.resulting_decision === "Approved" ? "Được duyệt" : "Bị từ chối"} ({Math.round(cf.resulting_probability * 100)}%)
+                        </p>
+                        {cf.changes.map((ch) => (
+                          <p key={ch.feature} className="text-xs text-muted-foreground">
+                            {ch.display_name}: {ch.original_value} → {ch.suggested_value}
+                          </p>
+                        ))}
+                      </div>
                     ))}
                   </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+                )}
+              </CardContent>
+            </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
-              <Gauge className="size-4 text-primary" />
-              Explanation Quality
-            </CardTitle>
-            <CardDescription>Stability, Completeness, và Sparsity của giải thích SHAP này.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {!qualityMutation.data ? (
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={!applicationFeatures || qualityMutation.isPending}
-                onClick={() => qualityMutation.mutate()}
-              >
-                {qualityMutation.isPending ? "Đang tính toán..." : "Kiểm tra chất lượng"}
-              </Button>
-            ) : (
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Điểm tổng hợp</span>
-                  <span className="font-medium">{qualityMutation.data.composite_quality_score.toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Stability</span>
-                  <Badge variant="outline" className="capitalize">
-                    {qualityMutation.data.stability.interpretation.replace("_", " ")}
-                  </Badge>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Completeness (SHAP)</span>
-                  <Badge variant={qualityMutation.data.completeness.is_complete ? "default" : "destructive"}>
-                    {qualityMutation.data.completeness.is_complete ? "Đã xác nhận" : "Không đạt"}
-                  </Badge>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Sparsity</span>
-                  <Badge variant="outline" className="capitalize">
-                    {qualityMutation.data.sparsity.interpretation}
-                  </Badge>
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <Gauge className="size-4 text-primary" />
+                  Explanation Quality
+                </CardTitle>
+                <CardDescription>
+                  <GlossaryTerm term="Stability" />, <GlossaryTerm term="Completeness" /> và{" "}
+                  <GlossaryTerm term="Sparsity" /> của giải thích SHAP này.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {!qualityMutation.data ? (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={!applicationFeatures || qualityMutation.isPending}
+                    onClick={() => qualityMutation.mutate()}
+                  >
+                    {qualityMutation.isPending ? "Đang tính toán..." : "Kiểm tra chất lượng"}
+                  </Button>
+                ) : (
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Điểm tổng hợp</span>
+                      <span className="font-medium">{qualityMutation.data.composite_quality_score.toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">
+                        <GlossaryTerm term="Stability" />
+                      </span>
+                      <Badge variant="outline" className="capitalize">
+                        {qualityMutation.data.stability.interpretation.replace("_", " ")}
+                      </Badge>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">
+                        <GlossaryTerm term="Completeness" /> (SHAP)
+                      </span>
+                      <Badge variant={qualityMutation.data.completeness.is_complete ? "default" : "destructive"}>
+                        {qualityMutation.data.completeness.is_complete ? "Đã xác nhận" : "Không đạt"}
+                      </Badge>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">
+                        <GlossaryTerm term="Sparsity" />
+                      </span>
+                      <Badge variant="outline" className="capitalize">
+                        {qualityMutation.data.sparsity.interpretation}
+                      </Badge>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        </CollapsibleContent>
+      </Collapsible>
 
       <Card>
         <CardHeader>

@@ -10,6 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
+import { GlossaryTerm } from "@/components/ui/glossary-term";
 import { getFairnessReport } from "@/lib/endpoints";
 import type { FairnessGroupResult } from "@/lib/types";
 
@@ -63,7 +64,12 @@ export default function FairnessPage() {
     <div className="space-y-6">
       <PageHeader
         title="Trung tâm Công bằng & AI Có trách nhiệm"
-        description="Kiểm tra tính công bằng nhân khẩu học và mức độ tuân thủ Four-Fifths Rule (80%) trên các thuộc tính nhạy cảm."
+        description={
+          <>
+            Kiểm tra tính công bằng nhân khẩu học và mức độ tuân thủ <GlossaryTerm term="Four-Fifths Rule" /> (80%) trên
+            các thuộc tính nhạy cảm.
+          </>
+        }
       />
 
       {isLoading ? (
@@ -85,9 +91,14 @@ export default function FairnessPage() {
                 : "Phát hiện vi phạm về công bằng"}
             </AlertTitle>
             <AlertDescription>
-              {data.compliance_summary.overall_compliant
-                ? `Toàn bộ ${data.compliance_summary.attributes_checked.length} thuộc tính được kiểm tra đều thỏa Four-Fifths Rule.`
-                : `Phát hiện vi phạm ở: ${data.compliance_summary.violations.join(", ")}`}
+              {data.compliance_summary.overall_compliant ? (
+                <>
+                  Toàn bộ {data.compliance_summary.attributes_checked.length} thuộc tính được kiểm tra đều thỏa{" "}
+                  <GlossaryTerm term="Four-Fifths Rule" />.
+                </>
+              ) : (
+                `Phát hiện vi phạm ở: ${data.compliance_summary.violations.join(", ")}`
+              )}
             </AlertDescription>
           </Alert>
 
@@ -125,8 +136,8 @@ export default function FairnessPage() {
                       <ShieldHalf className="size-4 text-primary" />
                       {attribute.replace("_", " ")}
                     </span>
-                    <Badge variant={result.passes_four_fifths_rule ? "default" : "destructive"}>
-                      {result.passes_four_fifths_rule ? "Đạt Four-Fifths Rule" : "Không đạt Four-Fifths Rule"}
+                    <Badge variant={result.passes_four_fifths_rule ? "default" : "destructive"} className="gap-1">
+                      {result.passes_four_fifths_rule ? "Đạt" : "Không đạt"} <GlossaryTerm term="Four-Fifths Rule" />
                     </Badge>
                   </CardTitle>
                   <CardDescription>
@@ -153,7 +164,7 @@ export default function FairnessPage() {
             <CardContent>
               {data.mitigation_recommendations.length === 0 ? (
                 <p className="text-sm text-muted-foreground">
-                  Không cần giảm thiểu — tất cả thuộc tính được kiểm tra hiện đều đạt Four-Fifths Rule.
+                  Không cần giảm thiểu — tất cả thuộc tính được kiểm tra hiện đều đạt <GlossaryTerm term="Four-Fifths Rule" />.
                 </p>
               ) : (
                 <div className="space-y-3">

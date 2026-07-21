@@ -20,6 +20,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { GlossaryTerm } from "@/components/ui/glossary-term";
 import { RiskGauge } from "@/components/charts/risk-gauge";
 import { ShapChart } from "@/components/charts/shap-chart";
 import { LoanApplicationForm } from "@/components/loan/loan-application-form";
@@ -143,6 +145,7 @@ export default function NewApplicationPage() {
                 exit={{ opacity: 0 }}
                 className="space-y-6"
               >
+                {/* ===== Lớp đơn giản: luôn hiển thị, ai xem cũng hiểu ngay ===== */}
                 <Card>
                   <CardHeader className="flex flex-row items-center justify-between">
                     <div>
@@ -177,58 +180,76 @@ export default function NewApplicationPage() {
                   </CardContent>
                 </Card>
 
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-base">
-                      <Brain className="size-4 text-primary" />
-                      Explanation Recommendation Engine
-                    </CardTitle>
-                    <CardDescription>
-                      Giải thích này được điều chỉnh cho bạn như thế nào, dựa trên các quy tắc đơn giản, minh bạch (không bao giờ là mô hình hộp đen).
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    {TRUST_INTERVENTION_META[result.explanation_strategy.trust_intervention] && (
-                      <div className="flex items-start gap-3 rounded-lg border bg-primary/5 p-3">
-                        <Lightbulb className="mt-0.5 size-4 shrink-0 text-primary" />
-                        <div>
-                          <p className="text-sm font-medium">
-                            {TRUST_INTERVENTION_META[result.explanation_strategy.trust_intervention]!.label}
-                          </p>
-                          <p className="text-sm text-muted-foreground">
-                            {TRUST_INTERVENTION_META[result.explanation_strategy.trust_intervention]!.description}
-                          </p>
+                {(result.explanation_strategy.suggest_counterfactual ||
+                  result.explanation_strategy.suggest_similar_cases) && (
+                  <div className="flex flex-wrap items-center gap-2">
+                    {result.explanation_strategy.suggest_counterfactual && (
+                      <Badge variant="outline" className="gap-1">
+                        Gợi ý: <GlossaryTerm term="Counterfactual" /> — cần thay đổi gì để đổi kết quả?
+                      </Badge>
+                    )}
+                    {result.explanation_strategy.suggest_similar_cases && (
+                      <Badge variant="outline">Gợi ý: Tra cứu hồ sơ tương tự</Badge>
+                    )}
+                  </div>
+                )}
+
+                {/* ===== Lớp kỹ thuật: gấp lại theo mặc định, chỉ ai cần mới mở ===== */}
+                <Collapsible className="rounded-xl border">
+                  <CollapsibleTrigger className="p-4">
+                    <span className="text-sm font-medium">
+                      Xem chi tiết kỹ thuật (SHAP, quy tắc điều chỉnh giải thích)
+                    </span>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent>
+                    <div className="space-y-6 border-t p-4 pt-4">
+                      <div>
+                        <div className="mb-3 flex items-center gap-2 text-base font-semibold">
+                          <Brain className="size-4 text-primary" />
+                          <GlossaryTerm term="Explanation Recommendation Engine" />
+                        </div>
+                        <p className="mb-3 text-sm text-muted-foreground">
+                          Giải thích này được điều chỉnh cho bạn như thế nào, dựa trên các quy tắc đơn giản, minh bạch (không bao giờ là mô hình hộp đen).
+                        </p>
+                        <div className="space-y-3">
+                          {TRUST_INTERVENTION_META[result.explanation_strategy.trust_intervention] && (
+                            <div className="flex items-start gap-3 rounded-lg border bg-primary/5 p-3">
+                              <Lightbulb className="mt-0.5 size-4 shrink-0 text-primary" />
+                              <div>
+                                <p className="text-sm font-medium">
+                                  {TRUST_INTERVENTION_META[result.explanation_strategy.trust_intervention]!.label}
+                                </p>
+                                <p className="text-sm text-muted-foreground">
+                                  {TRUST_INTERVENTION_META[result.explanation_strategy.trust_intervention]!.description}
+                                </p>
+                              </div>
+                            </div>
+                          )}
+                          <ul className="space-y-1.5 text-sm text-muted-foreground">
+                            {result.explanation_strategy.rationale.map((line, i) => (
+                              <li key={i} className="flex gap-2">
+                                <span className="text-primary">&bull;</span>
+                                <span>{line}</span>
+                              </li>
+                            ))}
+                          </ul>
                         </div>
                       </div>
-                    )}
-                    <div className="flex flex-wrap gap-2">
-                      {result.explanation_strategy.suggest_counterfactual && (
-                        <Badge variant="outline">Gợi ý: Counterfactual — cần thay đổi gì để đổi kết quả?</Badge>
-                      )}
-                      {result.explanation_strategy.suggest_similar_cases && (
-                        <Badge variant="outline">Gợi ý: Tra cứu hồ sơ tương tự</Badge>
-                      )}
-                    </div>
-                    <ul className="space-y-1.5 text-sm text-muted-foreground">
-                      {result.explanation_strategy.rationale.map((line, i) => (
-                        <li key={i} className="flex gap-2">
-                          <span className="text-primary">&bull;</span>
-                          <span>{line}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </CardContent>
-                </Card>
 
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Feature Contribution (SHAP)</CardTitle>
-                    <CardDescription>Cột dương làm tăng khả năng được duyệt, cột âm làm giảm khả năng đó.</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <ShapChart contributions={result.contributions} />
-                  </CardContent>
-                </Card>
+                      <Separator />
+
+                      <div>
+                        <div className="mb-1 flex items-center gap-1.5 text-base font-semibold">
+                          Feature Contribution (<GlossaryTerm term="SHAP" />)
+                        </div>
+                        <p className="mb-3 text-sm text-muted-foreground">
+                          Cột dương làm tăng khả năng được duyệt, cột âm làm giảm khả năng đó.
+                        </p>
+                        <ShapChart contributions={result.contributions} />
+                      </div>
+                    </div>
+                  </CollapsibleContent>
+                </Collapsible>
 
                 <Card>
                   <CardHeader>
@@ -237,7 +258,8 @@ export default function NewApplicationPage() {
                       Phản hồi của con người
                     </CardTitle>
                     <CardDescription>
-                      Phản hồi của bạn giúp huấn luyện Trust Calibrator và User Modeler cho các giải thích sau này.
+                      Phản hồi của bạn giúp huấn luyện <GlossaryTerm term="Trust Calibrator" /> và{" "}
+                      <GlossaryTerm term="User Modeler" /> cho các giải thích sau này.
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="flex gap-3">

@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { GlossaryTerm } from "@/components/ui/glossary-term";
 import { getMonitoringSnapshot } from "@/lib/endpoints";
 
 export default function MonitoringPage() {
@@ -49,7 +50,7 @@ export default function MonitoringPage() {
             </Card>
             <Card>
               <CardContent className="p-5">
-                <p className="text-sm text-muted-foreground">AUC</p>
+                <p className="text-sm text-muted-foreground"><GlossaryTerm term="AUC" /></p>
                 <p className="mt-1 font-heading text-xl font-semibold">
                   {metrics ? metrics.auc.toFixed(3) : "—"}
                 </p>
@@ -67,7 +68,7 @@ export default function MonitoringPage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Cpu className="size-4 text-primary" />
-                Báo cáo Feature Drift
+                Báo cáo <GlossaryTerm term="Feature Drift" />
               </CardTitle>
               <CardDescription>
                 So sánh các hồ sơ được xử lý gần đây với phân phối dữ liệu huấn luyện.
@@ -90,9 +91,11 @@ export default function MonitoringPage() {
                       <CheckCircle2 className="size-4" />
                     )}
                     <AlertTitle>
-                      {data.drift_report.overall_drift_detected
-                        ? "Phát hiện Feature Drift"
-                        : "Không phát hiện Feature Drift đáng kể"}
+                      {data.drift_report.overall_drift_detected ? (
+                        <>Phát hiện <GlossaryTerm term="Feature Drift" /></>
+                      ) : (
+                        <>Không phát hiện <GlossaryTerm term="Feature Drift" /> đáng kể</>
+                      )}
                     </AlertTitle>
                     <AlertDescription>
                       {data.drift_report.overall_drift_detected
@@ -134,7 +137,7 @@ export default function MonitoringPage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <TrendingUp className="size-4 text-primary" />
-                Prediction Drift
+                <GlossaryTerm term="Prediction Drift" />
               </CardTitle>
               <CardDescription>
                 Kiểm định Kolmogorov–Smirnov so sánh phân phối xác suất dự đoán gần đây với trước đó
@@ -156,9 +159,11 @@ export default function MonitoringPage() {
                       <CheckCircle2 className="size-4" />
                     )}
                     <AlertTitle>
-                      {data.prediction_drift.drift_detected
-                        ? "Phát hiện Prediction Drift"
-                        : "Không phát hiện Prediction Drift đáng kể"}
+                      {data.prediction_drift.drift_detected ? (
+                        <>Phát hiện <GlossaryTerm term="Prediction Drift" /></>
+                      ) : (
+                        <>Không phát hiện <GlossaryTerm term="Prediction Drift" /> đáng kể</>
+                      )}
                     </AlertTitle>
                     <AlertDescription>
                       Trung bình cửa sổ gần đây: {data.prediction_drift.recent_window_mean?.toFixed(3)} · Trung bình cửa sổ

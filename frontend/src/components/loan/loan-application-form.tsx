@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
 import { Button } from "@/components/ui/button";
+import { GlossaryTerm } from "@/components/ui/glossary-term";
 import type { LoanApplication } from "@/lib/types";
 
 export const loanApplicationSchema = z.object({
@@ -258,7 +259,9 @@ export function LoanApplicationForm({
           render={({ field }) => (
             <FormItem>
               <div className="flex items-center justify-between">
-                <FormLabel>Điểm tín dụng (CIBIL)</FormLabel>
+                <FormLabel>
+                  Điểm tín dụng (<GlossaryTerm term="CIBIL" />)
+                </FormLabel>
                 <span className="font-mono text-sm font-medium text-primary">{cibilScore}</span>
               </div>
               <FormControl>

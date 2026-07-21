@@ -18,6 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { GlossaryTerm } from "@/components/ui/glossary-term";
 import {
   activateModelVersion,
   compareModelVersions,
@@ -67,7 +68,12 @@ export default function ModelCenterPage() {
     <div className="space-y-6">
       <PageHeader
         title="Trung tâm Mô hình AI"
-        description="Quản lý Model Registry, Experiment Tracking, và Champion-Challenger cho mô hình duyệt vay."
+        description={
+          <>
+            Quản lý <GlossaryTerm term="Model Registry" />, Experiment Tracking, và{" "}
+            <GlossaryTerm term="Champion-Challenger" /> cho mô hình duyệt vay.
+          </>
+        }
         actions={
           isAdmin ? (
             <Button onClick={() => trainMutation.mutate()} disabled={trainMutation.isPending}>
@@ -99,8 +105,8 @@ export default function ModelCenterPage() {
                   <TableHead>Trạng thái</TableHead>
                   <TableHead>Thuật toán</TableHead>
                   <TableHead>Accuracy</TableHead>
-                  <TableHead>F1</TableHead>
-                  <TableHead>AUC</TableHead>
+                  <TableHead><GlossaryTerm term="F1" /></TableHead>
+                  <TableHead><GlossaryTerm term="AUC" /></TableHead>
                   <TableHead>Người huấn luyện</TableHead>
                   <TableHead>Thời gian tạo</TableHead>
                   <TableHead />
@@ -155,7 +161,7 @@ export default function ModelCenterPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <GitCompareArrows className="size-4 text-primary" />
-              So sánh Champion-Challenger
+              So sánh <GlossaryTerm term="Champion-Challenger" />
             </CardTitle>
             <CardDescription>So sánh song song các chỉ số giữa hai phiên bản bất kỳ.</CardDescription>
           </CardHeader>

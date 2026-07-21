@@ -10,6 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { GlossaryTerm } from "@/components/ui/glossary-term";
 import { getGlobalExplainability } from "@/lib/endpoints";
 
 export default function GlobalExplainabilityPage() {
@@ -63,7 +64,12 @@ export default function GlobalExplainabilityPage() {
     <div className="space-y-6">
       <PageHeader
         title="Global Explainability"
-        description="Feature Importance tổng hợp (SHAP) trên toàn bộ dữ liệu — cách mô hình hoạt động chung, không chỉ riêng một hồ sơ."
+        description={
+          <>
+            Feature Importance tổng hợp (<GlossaryTerm term="SHAP" />) trên toàn bộ dữ liệu — cách mô hình hoạt
+            động chung, không chỉ riêng một hồ sơ.
+          </>
+        }
       />
 
       {isLoading ? (
@@ -94,8 +100,8 @@ export default function GlobalExplainabilityPage() {
                 Xếp hạng Feature Importance
               </CardTitle>
               <CardDescription>
-                Giá trị SHAP tuyệt đối trung bình của mỗi yếu tố, theo tỷ lệ trên tổng mức ảnh hưởng. Cột xanh
-                làm tăng khả năng duyệt trung bình, cột đỏ làm giảm khả năng đó.
+                Giá trị <GlossaryTerm term="SHAP" /> tuyệt đối trung bình của mỗi yếu tố, theo tỷ lệ trên tổng
+                mức ảnh hưởng. Cột xanh làm tăng khả năng duyệt trung bình, cột đỏ làm giảm khả năng đó.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -110,7 +116,9 @@ export default function GlobalExplainabilityPage() {
           <Card>
             <CardHeader>
               <CardTitle>Phân tích chi tiết</CardTitle>
-              <CardDescription>Trung bình và độ lệch chuẩn của |SHAP| cho mỗi yếu tố.</CardDescription>
+              <CardDescription>
+                Trung bình và độ lệch chuẩn của |<GlossaryTerm term="SHAP" />| cho mỗi yếu tố.
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <Table>
