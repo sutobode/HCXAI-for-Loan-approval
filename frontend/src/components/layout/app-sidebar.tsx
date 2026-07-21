@@ -68,7 +68,7 @@ const NAV_ITEMS: NavItem[] = [
     roles: ["admin", "risk_manager"],
   },
   {
-    title: "Khả năng Giải thích Toàn cục",
+    title: "Global Explainability",
     href: "/explainability/global",
     icon: Layers,
     roles: ["admin", "risk_manager", "loan_officer"],

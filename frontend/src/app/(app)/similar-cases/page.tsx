@@ -35,7 +35,7 @@ export default function SimilarCasesPage() {
     <div className="space-y-6">
       <PageHeader
         title="Tra cứu Hồ sơ Tương tự"
-        description="Suy luận theo trường hợp: tìm k hồ sơ trong lịch sử gần nhất (k-NN của scikit-learn) và so sánh kết quả của chúng."
+        description="Case-Based Reasoning: tìm k hồ sơ trong lịch sử gần nhất (k-NN của scikit-learn) và so sánh kết quả của chúng."
       />
 
       <div className="grid gap-6 lg:grid-cols-[1fr_1fr]">

@@ -62,8 +62,8 @@ export default function GlobalExplainabilityPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Khả năng Giải thích Toàn cục"
-        description="Mức độ quan trọng tổng hợp của từng yếu tố (SHAP) trên toàn bộ dữ liệu — cách mô hình hoạt động chung, không chỉ riêng một hồ sơ."
+        title="Global Explainability"
+        description="Feature Importance tổng hợp (SHAP) trên toàn bộ dữ liệu — cách mô hình hoạt động chung, không chỉ riêng một hồ sơ."
       />
 
       {isLoading ? (
@@ -91,7 +91,7 @@ export default function GlobalExplainabilityPage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Layers className="size-4 text-primary" />
-                Xếp hạng mức độ quan trọng của yếu tố
+                Xếp hạng Feature Importance
               </CardTitle>
               <CardDescription>
                 Giá trị SHAP tuyệt đối trung bình của mỗi yếu tố, theo tỷ lệ trên tổng mức ảnh hưởng. Cột xanh

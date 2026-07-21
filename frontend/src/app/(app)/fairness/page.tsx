@@ -43,7 +43,7 @@ function GroupBarChart({ result }: { result: FairnessGroupResult }) {
           silent: true,
           symbol: "none",
           lineStyle: { color: "#ef4444", type: "dashed" },
-          label: { formatter: "Quy tắc 80%", color: textColor },
+          label: { formatter: "Four-Fifths Rule", color: textColor },
           data: [{ yAxis: (Math.max(...groups.map((g) => result.approval_rate_by_group[g])) * 0.8) }],
         },
       },
@@ -63,7 +63,7 @@ export default function FairnessPage() {
     <div className="space-y-6">
       <PageHeader
         title="Trung tâm Công bằng & AI Có trách nhiệm"
-        description="Kiểm tra tính công bằng nhân khẩu học và mức độ tuân thủ quy tắc bốn phần năm (80%) trên các thuộc tính nhạy cảm."
+        description="Kiểm tra tính công bằng nhân khẩu học và mức độ tuân thủ Four-Fifths Rule (80%) trên các thuộc tính nhạy cảm."
       />
 
       {isLoading ? (
@@ -86,7 +86,7 @@ export default function FairnessPage() {
             </AlertTitle>
             <AlertDescription>
               {data.compliance_summary.overall_compliant
-                ? `Toàn bộ ${data.compliance_summary.attributes_checked.length} thuộc tính được kiểm tra đều thỏa quy tắc bốn phần năm.`
+                ? `Toàn bộ ${data.compliance_summary.attributes_checked.length} thuộc tính được kiểm tra đều thỏa Four-Fifths Rule.`
                 : `Phát hiện vi phạm ở: ${data.compliance_summary.violations.join(", ")}`}
             </AlertDescription>
           </Alert>
@@ -126,11 +126,11 @@ export default function FairnessPage() {
                       {attribute.replace("_", " ")}
                     </span>
                     <Badge variant={result.passes_four_fifths_rule ? "default" : "destructive"}>
-                      {result.passes_four_fifths_rule ? "Đạt quy tắc 80%" : "Không đạt quy tắc 80%"}
+                      {result.passes_four_fifths_rule ? "Đạt Four-Fifths Rule" : "Không đạt Four-Fifths Rule"}
                     </Badge>
                   </CardTitle>
                   <CardDescription>
-                    Tỷ số công bằng: {result.parity_ratio !== null ? result.parity_ratio.toFixed(3) : "—"}
+                    Parity Ratio: {result.parity_ratio !== null ? result.parity_ratio.toFixed(3) : "—"}
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -153,7 +153,7 @@ export default function FairnessPage() {
             <CardContent>
               {data.mitigation_recommendations.length === 0 ? (
                 <p className="text-sm text-muted-foreground">
-                  Không cần giảm thiểu — tất cả thuộc tính được kiểm tra hiện đều đạt quy tắc bốn phần năm.
+                  Không cần giảm thiểu — tất cả thuộc tính được kiểm tra hiện đều đạt Four-Fifths Rule.
                 </p>
               ) : (
                 <div className="space-y-3">

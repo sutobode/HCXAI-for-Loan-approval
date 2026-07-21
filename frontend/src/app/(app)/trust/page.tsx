@@ -86,7 +86,7 @@ export default function TrustDashboardPage() {
     <div className="space-y-6">
       <PageHeader
         title="Bảng Tin cậy"
-        description="Mô hình hóa Người dùng + Cân chỉnh Độ tin cậy: mức độ quyết định của người dùng khớp với độ tin cậy của AI."
+        description="User Modeler + Trust Calibrator: mức độ quyết định của người dùng khớp với độ tin cậy của AI."
         actions={
           <Button variant="outline" nativeButton={false} render={<Link href="/hcxai/explanation-history" />}>
             <History className="size-4" />
@@ -144,7 +144,7 @@ export default function TrustDashboardPage() {
           <Card>
             <CardHeader>
               <CardTitle>Hồ sơ nhận thức</CardTitle>
-              <CardDescription>Được học từ lịch sử tương tác (Mô hình hóa Người dùng HCXAI)</CardDescription>
+              <CardDescription>Được học từ lịch sử tương tác (User Modeler)</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-2 gap-4">

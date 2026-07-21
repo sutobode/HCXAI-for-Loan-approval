@@ -23,7 +23,7 @@ const PAGE_TITLES: Record<string, string> = {
   "/trust": "Bảng Tin cậy",
   "/hcxai/explanation-history": "Lịch sử Giải thích",
   "/hcxai/override-analysis": "Phân tích Ghi đè của Con người",
-  "/explainability/global": "Khả năng Giải thích Toàn cục",
+  "/explainability/global": "Global Explainability",
   "/fairness": "Công bằng & AI Có trách nhiệm",
   "/monitoring": "Giám sát Mô hình",
   "/model-center": "Trung tâm Mô hình AI",

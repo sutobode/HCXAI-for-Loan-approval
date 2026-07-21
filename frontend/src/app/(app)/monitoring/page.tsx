@@ -41,7 +41,7 @@ export default function MonitoringPage() {
             </Card>
             <Card>
               <CardContent className="p-5">
-                <p className="text-sm text-muted-foreground">Độ chính xác</p>
+                <p className="text-sm text-muted-foreground">Accuracy</p>
                 <p className="mt-1 font-heading text-xl font-semibold">
                   {metrics ? `${(metrics.accuracy * 100).toFixed(1)}%` : "—"}
                 </p>
@@ -67,7 +67,7 @@ export default function MonitoringPage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Cpu className="size-4 text-primary" />
-                Báo cáo lệch dữ liệu đầu vào
+                Báo cáo Feature Drift
               </CardTitle>
               <CardDescription>
                 So sánh các hồ sơ được xử lý gần đây với phân phối dữ liệu huấn luyện.
@@ -91,8 +91,8 @@ export default function MonitoringPage() {
                     )}
                     <AlertTitle>
                       {data.drift_report.overall_drift_detected
-                        ? "Phát hiện lệch dữ liệu"
-                        : "Không phát hiện lệch dữ liệu đáng kể"}
+                        ? "Phát hiện Feature Drift"
+                        : "Không phát hiện Feature Drift đáng kể"}
                     </AlertTitle>
                     <AlertDescription>
                       {data.drift_report.overall_drift_detected
@@ -134,7 +134,7 @@ export default function MonitoringPage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <TrendingUp className="size-4 text-primary" />
-                Lệch phân phối dự đoán
+                Prediction Drift
               </CardTitle>
               <CardDescription>
                 Kiểm định Kolmogorov–Smirnov so sánh phân phối xác suất dự đoán gần đây với trước đó
@@ -157,8 +157,8 @@ export default function MonitoringPage() {
                     )}
                     <AlertTitle>
                       {data.prediction_drift.drift_detected
-                        ? "Phát hiện lệch phân phối dự đoán"
-                        : "Không phát hiện lệch phân phối dự đoán đáng kể"}
+                        ? "Phát hiện Prediction Drift"
+                        : "Không phát hiện Prediction Drift đáng kể"}
                     </AlertTitle>
                     <AlertDescription>
                       Trung bình cửa sổ gần đây: {data.prediction_drift.recent_window_mean?.toFixed(3)} · Trung bình cửa sổ

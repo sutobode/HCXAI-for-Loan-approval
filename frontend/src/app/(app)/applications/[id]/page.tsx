@@ -126,7 +126,7 @@ export default function ApplicationDetailPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Mức độ ảnh hưởng của từng yếu tố (SHAP)</CardTitle>
+          <CardTitle>Feature Contribution (SHAP)</CardTitle>
           <CardDescription>Giá trị cơ sở: {data.shap_result.base_value.toFixed(3)}</CardDescription>
         </CardHeader>
         <CardContent>
@@ -178,7 +178,7 @@ export default function ApplicationDetailPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base">
               <Scale className="size-4 text-primary" />
-              Phản chứng
+              Counterfactual
             </CardTitle>
             <CardDescription>Những thay đổi nhỏ nhất có thể đổi ngược quyết định này.</CardDescription>
           </CardHeader>
@@ -190,10 +190,10 @@ export default function ApplicationDetailPage() {
                 disabled={!applicationFeatures || counterfactualMutation.isPending}
                 onClick={() => counterfactualMutation.mutate()}
               >
-                {counterfactualMutation.isPending ? "Đang tìm kiếm..." : "Tìm phản chứng"}
+                {counterfactualMutation.isPending ? "Đang tìm kiếm..." : "Tìm Counterfactual"}
               </Button>
             ) : counterfactualMutation.data.counterfactuals.length === 0 ? (
-              <p className="text-sm text-muted-foreground">Không tìm được phản chứng trong phạm vi tìm kiếm.</p>
+              <p className="text-sm text-muted-foreground">Không tìm được Counterfactual trong phạm vi tìm kiếm.</p>
             ) : (
               <div className="space-y-3">
                 {counterfactualMutation.data.counterfactuals.map((cf, i) => (
@@ -217,9 +217,9 @@ export default function ApplicationDetailPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base">
               <Gauge className="size-4 text-primary" />
-              Chất lượng giải thích
+              Explanation Quality
             </CardTitle>
-            <CardDescription>Độ ổn định, độ đầy đủ, và độ cô đọng của giải thích SHAP này.</CardDescription>
+            <CardDescription>Stability, Completeness, và Sparsity của giải thích SHAP này.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
             {!qualityMutation.data ? (
@@ -238,19 +238,19 @@ export default function ApplicationDetailPage() {
                   <span className="font-medium">{qualityMutation.data.composite_quality_score.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Độ ổn định</span>
+                  <span className="text-muted-foreground">Stability</span>
                   <Badge variant="outline" className="capitalize">
                     {qualityMutation.data.stability.interpretation.replace("_", " ")}
                   </Badge>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Tính đầy đủ SHAP</span>
+                  <span className="text-muted-foreground">Completeness (SHAP)</span>
                   <Badge variant={qualityMutation.data.completeness.is_complete ? "default" : "destructive"}>
                     {qualityMutation.data.completeness.is_complete ? "Đã xác nhận" : "Không đạt"}
                   </Badge>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Độ cô đọng</span>
+                  <span className="text-muted-foreground">Sparsity</span>
                   <Badge variant="outline" className="capitalize">
                     {qualityMutation.data.sparsity.interpretation}
                   </Badge>

@@ -181,7 +181,7 @@ export default function NewApplicationPage() {
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2 text-base">
                       <Brain className="size-4 text-primary" />
-                      Cơ chế Đề xuất Giải thích
+                      Explanation Recommendation Engine
                     </CardTitle>
                     <CardDescription>
                       Giải thích này được điều chỉnh cho bạn như thế nào, dựa trên các quy tắc đơn giản, minh bạch (không bao giờ là mô hình hộp đen).
@@ -203,7 +203,7 @@ export default function NewApplicationPage() {
                     )}
                     <div className="flex flex-wrap gap-2">
                       {result.explanation_strategy.suggest_counterfactual && (
-                        <Badge variant="outline">Gợi ý: Cần thay đổi gì để đổi kết quả?</Badge>
+                        <Badge variant="outline">Gợi ý: Counterfactual — cần thay đổi gì để đổi kết quả?</Badge>
                       )}
                       {result.explanation_strategy.suggest_similar_cases && (
                         <Badge variant="outline">Gợi ý: Tra cứu hồ sơ tương tự</Badge>
@@ -222,7 +222,7 @@ export default function NewApplicationPage() {
 
                 <Card>
                   <CardHeader>
-                    <CardTitle>Mức độ ảnh hưởng của từng yếu tố (SHAP)</CardTitle>
+                    <CardTitle>Feature Contribution (SHAP)</CardTitle>
                     <CardDescription>Cột dương làm tăng khả năng được duyệt, cột âm làm giảm khả năng đó.</CardDescription>
                   </CardHeader>
                   <CardContent>
@@ -237,7 +237,7 @@ export default function NewApplicationPage() {
                       Phản hồi của con người
                     </CardTitle>
                     <CardDescription>
-                      Phản hồi của bạn giúp huấn luyện cơ chế Cân chỉnh Độ tin cậy và Mô hình hóa Người dùng cho các giải thích sau này.
+                      Phản hồi của bạn giúp huấn luyện Trust Calibrator và User Modeler cho các giải thích sau này.
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="flex gap-3">

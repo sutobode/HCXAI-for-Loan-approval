@@ -67,7 +67,7 @@ export default function ModelCenterPage() {
     <div className="space-y-6">
       <PageHeader
         title="Trung tâm Mô hình AI"
-        description="Quản lý Danh mục Mô hình, Theo dõi Thực nghiệm, và cơ chế Phiên bản chính - Phiên bản thử nghiệm cho mô hình duyệt vay."
+        description="Quản lý Model Registry, Experiment Tracking, và Champion-Challenger cho mô hình duyệt vay."
         actions={
           isAdmin ? (
             <Button onClick={() => trainMutation.mutate()} disabled={trainMutation.isPending}>
@@ -98,7 +98,7 @@ export default function ModelCenterPage() {
                   <TableHead>Phiên bản</TableHead>
                   <TableHead>Trạng thái</TableHead>
                   <TableHead>Thuật toán</TableHead>
-                  <TableHead>Độ chính xác</TableHead>
+                  <TableHead>Accuracy</TableHead>
                   <TableHead>F1</TableHead>
                   <TableHead>AUC</TableHead>
                   <TableHead>Người huấn luyện</TableHead>
@@ -155,7 +155,7 @@ export default function ModelCenterPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <GitCompareArrows className="size-4 text-primary" />
-              So sánh Phiên bản chính - Phiên bản thử nghiệm
+              So sánh Champion-Challenger
             </CardTitle>
             <CardDescription>So sánh song song các chỉ số giữa hai phiên bản bất kỳ.</CardDescription>
           </CardHeader>
