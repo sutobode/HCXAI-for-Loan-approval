@@ -251,3 +251,189 @@ def test_change_password_rejects_wrong_current_password(client):
         headers=user_headers,
     )
     assert resp.status_code == 401
+
+
+# ---------------------------------------------------------------------------
+# Write-path ownership checks: /explain and /feedback accept a free-text
+# `user_id` field (so staff can act on behalf of a customer). A 'customer'
+# account must not be able to pass another user's email as `user_id` and
+# pollute that user's HCXAI cognitive profile / trust calibration history.
+# Staff roles (admin/risk_manager/loan_officer) are exempt -- see
+# main._require_matching_user_id_for_customers.
+# ---------------------------------------------------------------------------
+
+SAMPLE_APPLICATION_PAYLOAD = {
+    "no_of_dependents": 2,
+    "education": "Graduate",
+    "self_employed": "No",
+    "income_annum": 9600000,
+    "loan_amount": 29900000,
+    "loan_term": 12,
+    "cibil_score": 778,
+    "residential_assets_value": 2400000,
+    "commercial_assets_value": 17600000,
+    "luxury_assets_value": 22700000,
+    "bank_asset_value": 8000000,
+}
+
+
+def _ensure_active_model(client):
+    """/explain and /predict need an active Model Registry version; train
+    one directly against this test's isolated SQLite DB if none exists yet."""
+    from app import db as db_module
+    from app.model_registry import train_new_version
+
+    if db_module.get_active_model_version() is None:
+        train_new_version(trained_by="pytest", notes="auto-trained for test_auth.py")
+
+
+def test_customer_cannot_explain_on_behalf_of_another_user(client):
+    _ensure_active_model(client)
+    admin_headers = _admin_headers(client)
+    _register_and_login(client, admin_headers, "explain_victim@test.local")
+    attacker_headers = _register_and_login(client, admin_headers, "explain_attacker@test.local")
+
+    resp = client.post(
+        "/explain",
+        json={
+            "application": SAMPLE_APPLICATION_PAYLOAD,
+            "role": "customer",
+            "user_id": "explain_victim@test.local",
+        },
+        headers=attacker_headers,
+    )
+    assert resp.status_code == 403
+
+
+def test_customer_can_explain_under_their_own_user_id(client):
+    _ensure_active_model(client)
+    admin_headers = _admin_headers(client)
+    own_headers = _register_and_login(client, admin_headers, "explain_self@test.local")
+
+    resp = client.post(
+        "/explain",
+        json={
+            "application": SAMPLE_APPLICATION_PAYLOAD,
+            "role": "customer",
+            "user_id": "explain_self@test.local",
+        },
+        headers=own_headers,
+    )
+    assert resp.status_code == 200
+
+
+def test_loan_officer_can_explain_on_behalf_of_a_customer(client):
+    _ensure_active_model(client)
+    admin_headers = _admin_headers(client)
+    officer_headers = _register_and_login(
+        client, admin_headers, "officer1@test.local", role="loan_officer"
+    )
+
+    resp = client.post(
+        "/explain",
+        json={
+            "application": SAMPLE_APPLICATION_PAYLOAD,
+            "role": "loan_officer",
+            "user_id": "some.customer@test.local",
+        },
+        headers=officer_headers,
+    )
+    assert resp.status_code == 200
+
+
+def test_customer_cannot_submit_feedback_on_behalf_of_another_user(client):
+    _ensure_active_model(client)
+    admin_headers = _admin_headers(client)
+    attacker_headers = _register_and_login(client, admin_headers, "feedback_attacker@test.local")
+
+    explain_resp = client.post(
+        "/explain",
+        json={
+            "application": SAMPLE_APPLICATION_PAYLOAD,
+            "role": "customer",
+            "user_id": "feedback_attacker@test.local",
+        },
+        headers=attacker_headers,
+    )
+    prediction_id = explain_resp.json()["prediction_id"]
+
+    resp = client.post(
+        "/feedback",
+        json={
+            "prediction_id": prediction_id,
+            "user_id": "feedback_victim@test.local",
+            "action": "approve",
+        },
+        headers=attacker_headers,
+    )
+    assert resp.status_code == 403
+
+
+def test_customer_can_submit_feedback_under_their_own_user_id(client):
+    _ensure_active_model(client)
+    admin_headers = _admin_headers(client)
+    own_headers = _register_and_login(client, admin_headers, "feedback_self@test.local")
+
+    explain_resp = client.post(
+        "/explain",
+        json={
+            "application": SAMPLE_APPLICATION_PAYLOAD,
+            "role": "customer",
+            "user_id": "feedback_self@test.local",
+        },
+        headers=own_headers,
+    )
+    prediction_id = explain_resp.json()["prediction_id"]
+
+    resp = client.post(
+        "/feedback",
+        json={
+            "prediction_id": prediction_id,
+            "user_id": "feedback_self@test.local",
+            "action": "approve",
+        },
+        headers=own_headers,
+    )
+    assert resp.status_code == 200
+
+
+def test_feedback_action_is_recorded_in_audit_log(client):
+    """Item #2 from the review: POST /feedback must now write an audit_log entry."""
+    _ensure_active_model(client)
+    admin_headers = _admin_headers(client)
+    own_headers = _register_and_login(client, admin_headers, "audit_feedback_user@test.local")
+
+    explain_resp = client.post(
+        "/explain",
+        json={
+            "application": SAMPLE_APPLICATION_PAYLOAD,
+            "role": "customer",
+            "user_id": "audit_feedback_user@test.local",
+        },
+        headers=own_headers,
+    )
+    prediction_id = explain_resp.json()["prediction_id"]
+
+    client.post(
+        "/feedback",
+        json={
+            "prediction_id": prediction_id,
+            "user_id": "audit_feedback_user@test.local",
+            "action": "approve",
+        },
+        headers=own_headers,
+    )
+
+    audit_resp = client.get("/audit?action=feedback", headers=admin_headers)
+    items = audit_resp.json()["items"]
+    assert any(item["resource_id"] == str(prediction_id) for item in items)
+
+
+def test_register_action_is_recorded_in_audit_log(client):
+    """Item #3 from the review: POST /auth/register must now write an audit_log entry."""
+    admin_headers = _admin_headers(client)
+    _register_and_login(client, admin_headers, "audit_register_user@test.local")
+
+    audit_resp = client.get("/audit?action=auth.register", headers=admin_headers)
+    items = audit_resp.json()["items"]
+    assert any(item["resource_id"] == "audit_register_user@test.local" for item in items)

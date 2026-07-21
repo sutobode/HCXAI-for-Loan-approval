@@ -402,10 +402,26 @@ def get_trust_calibration(user_id: str) -> dict[str, Any]:
         else None
     )
 
-    # Heuristic trust-state classification (mirrors design doc's TrustCalibrator)
-    if agreement_rate > 0.9 and (avg_conf_agree or 0) < 0.7:
+    # Heuristic trust-state classification (mirrors design doc's TrustCalibrator).
+    # These thresholds are deliberately generous (not tuned against real data
+    # yet) -- they classify only the clear-cut cases, leaving anything less
+    # extreme as "well_calibrated" by default:
+    #   over_trust:  agrees >90% of the time, even though the AI averaged
+    #                below 70% confidence on those agreements (i.e. the human
+    #                is rubber-stamping predictions the model itself is not
+    #                very sure about).
+    #   under_trust: disagrees >50% of the time, even though the AI averaged
+    #                above 85% confidence on those disagreements (i.e. the
+    #                human keeps overriding predictions the model is very
+    #                confident about).
+    OVER_TRUST_AGREEMENT_RATE = 0.9
+    OVER_TRUST_MAX_AVG_CONFIDENCE = 0.7
+    UNDER_TRUST_AGREEMENT_RATE = 0.5
+    UNDER_TRUST_MIN_AVG_CONFIDENCE = 0.85
+
+    if agreement_rate > OVER_TRUST_AGREEMENT_RATE and (avg_conf_agree or 0) < OVER_TRUST_MAX_AVG_CONFIDENCE:
         trust_state = "over_trust"
-    elif agreement_rate < 0.5 and (avg_conf_disagree or 1) > 0.85:
+    elif agreement_rate < UNDER_TRUST_AGREEMENT_RATE and (avg_conf_disagree or 1) > UNDER_TRUST_MIN_AVG_CONFIDENCE:
         trust_state = "under_trust"
     else:
         trust_state = "well_calibrated"

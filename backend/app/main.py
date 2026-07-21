@@ -167,12 +167,12 @@ _PRIVILEGED_ROLES = ("admin", "risk_manager")
 
 def _require_self_or_privileged(current_user: dict, target_user_id: str) -> None:
     """
-    Ownership check for per-user HCXAI endpoints (Trust Dashboard, Explanation
-    History, Explanation Satisfaction): any authenticated user may view their
-    *own* data, but viewing another user's personal profile/history/ratings
-    requires admin or risk_manager. Without this, any authenticated user
-    (including 'customer') could read another user's trust profile or
-    explanation history just by knowing their email.
+    Read-path ownership check for per-user HCXAI endpoints (Trust Dashboard,
+    Explanation History, Explanation Satisfaction): any authenticated user
+    may view their *own* data, but viewing another user's personal profile/
+    history/ratings requires admin or risk_manager. Without this, any
+    authenticated user (including 'customer') could read another user's
+    trust profile or explanation history just by knowing their email.
     """
     if current_user["role"] in _PRIVILEGED_ROLES:
         return
@@ -181,6 +181,29 @@ def _require_self_or_privileged(current_user: dict, target_user_id: str) -> None
     raise HTTPException(
         status_code=403,
         detail="You may only view your own data. Admin or risk_manager role is required to view another user's.",
+    )
+
+
+def _require_matching_user_id_for_customers(current_user: dict, request_user_id: str) -> None:
+    """
+    Write-path counterpart to _require_self_or_privileged, for /explain and
+    /feedback: those endpoints accept a free-text `user_id` field (so staff
+    can submit/explain applications on behalf of a customer, and the HCXAI
+    User Modeler/Trust Calibrator can track that customer's own profile
+    rather than the staff member's). Staff roles (admin, risk_manager,
+    loan_officer) are exempt -- processing applications on behalf of
+    customers is their normal job. A 'customer' account, however, must only
+    ever write under their own email; otherwise any customer could pass
+    another customer's email as `user_id` and pollute that person's
+    cognitive profile / trust calibration history.
+    """
+    if current_user["role"] != "customer":
+        return
+    if current_user["email"].lower() == request_user_id.lower():
+        return
+    raise HTTPException(
+        status_code=403,
+        detail="Customers may only submit applications or feedback under their own account.",
     )
 
 
@@ -211,6 +234,13 @@ def register(request: RegisterRequest, current_user: dict = Depends(auth.require
         role=request.role,
     )
     logger.info("Admin %s created new user %s (role=%s)", current_user["email"], user["email"], user["role"])
+    db.log_audit_event(
+        user_id=current_user["email"],
+        action="auth.register",
+        resource_type="user",
+        resource_id=user["email"],
+        details={"role": user["role"]},
+    )
     return UserResponse(**{**user, "is_active": bool(user["is_active"])})
 
 
@@ -274,6 +304,7 @@ def explain(
     request: ExplainRequest,
     current_user: dict = Depends(auth.require_authenticated),
 ):
+    _require_matching_user_id_for_customers(current_user, request.user_id)
     explainer = _get_explainer_or_503()
 
     features_df = encode_single_application(request.application.model_dump(), explainer.encoders)
@@ -365,6 +396,8 @@ def submit_feedback(
     override decision against a previously generated prediction, and feed it
     into the Trust Calibrator + User Modeler.
     """
+    _require_matching_user_id_for_customers(current_user, request.user_id)
+
     pred = db.get_prediction(request.prediction_id)
     if pred is None:
         raise HTTPException(status_code=404, detail=f"Prediction {request.prediction_id} not found")
@@ -388,6 +421,13 @@ def submit_feedback(
         ai_prediction=pred["prediction"],
         ai_confidence=pred["confidence"],
         human_decision=human_decision,
+    )
+    db.log_audit_event(
+        user_id=current_user["email"],
+        action="feedback",
+        resource_type="prediction",
+        resource_id=str(request.prediction_id),
+        details={"action": request.action, "on_behalf_of": request.user_id},
     )
 
     return FeedbackResponse(feedback_id=feedback_id, trust_calibration=trust_calibration)
@@ -469,7 +509,9 @@ def fairness_report(
 ):
     """Fairness & Responsible AI Center: demographic parity + 80% rule check + mitigation recommendations."""
     explainer = _get_explainer_or_503()
-    return compute_fairness_report(explainer)
+    report = compute_fairness_report(explainer)
+    db.log_audit_event(user_id=current_user["email"], action="fairness.report")
+    return report
 
 
 @app.get("/monitoring/snapshot")
@@ -477,7 +519,9 @@ def monitoring_snapshot(
     current_user: dict = Depends(auth.require_roles("admin", "risk_manager")),
 ):
     """Model Monitoring Center: training metrics + feature drift + prediction drift."""
-    return get_monitoring_snapshot()
+    snapshot = get_monitoring_snapshot()
+    db.log_audit_event(user_id=current_user["email"], action="monitoring.snapshot")
+    return snapshot
 
 
 # ---------------------------------------------------------------------------

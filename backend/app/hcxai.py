@@ -36,15 +36,23 @@ from . import db
 DetailLevel = Literal["summary", "detailed", "technical"]
 
 
-def resolve_detail_level(user_id: str, override: DetailLevel | None = None) -> DetailLevel:
+def resolve_detail_level(
+    user_id: str,
+    override: DetailLevel | None = None,
+    profile: dict[str, Any] | None = None,
+) -> DetailLevel:
     """
     Decide which explanation detail level to use for this user.
     Explicit request override wins; otherwise use the user's learned preference
     from the User Modeler (based on interaction history).
+
+    `profile` can be passed in by a caller that already fetched it (e.g.
+    recommend_explanation_strategy(), which also needs it for
+    expertise_level) to avoid a redundant database lookup.
     """
     if override:
         return override
-    profile = db.get_or_create_user_profile(user_id)
+    profile = profile or db.get_or_create_user_profile(user_id)
     return profile["preferred_detail_level"]  # type: ignore[return-value]
 
 
@@ -68,10 +76,25 @@ def estimate_cognitive_load(shap_result: dict[str, Any], user_expertise: float) 
     appropriate right now, or whether it should be simplified further than
     what resolve_detail_level() alone would pick.
     """
+    # Tunable constants for this heuristic. None of these come from a paper
+    # or calibration study -- they're reasonable starting points chosen so
+    # the *shape* of the behavior is right (more conflicting/numerous
+    # factors and lower expertise both increase load); treat them as a
+    # config surface to tune against real user feedback over time, not as
+    # fixed truths.
+    NOISE_THRESHOLD_RATIO = 0.1  # a feature under 10% of the top factor's magnitude is "noise", ignored below
+    MAX_FACTORS_FOR_FULL_LOAD = 8.0  # matches Miller's "7 +/- 2" working-memory heuristic (see docstring)
+    FACTOR_COUNT_WEIGHT = 0.6  # how much "many factors" contributes to raw_load, vs. conflict below
+    CONFLICT_WEIGHT = 0.4  # how much "factors disagree with each other" contributes to raw_load
+    NOVICE_LOAD_MULTIPLIER = 1.5  # a novice (expertise=0) perceives 1.5x the raw load
+    EXPERT_LOAD_MULTIPLIER = 0.5  # an expert (expertise=1) perceives 0.5x the raw load
+    SIMPLIFY_THRESHOLD = 0.7  # perceived_load above this -> recommend simplifying
+    STANDARD_THRESHOLD = 0.4  # perceived_load above this (but below SIMPLIFY_THRESHOLD) -> standard detail
+
     contributions = shap_result["contributions"]
     magnitudes = [abs(c["shap_contribution"]) for c in contributions]
     max_magnitude = max(magnitudes) if magnitudes else 1.0
-    threshold = max_magnitude * 0.1  # features under 10% of the top factor's magnitude are "noise"
+    threshold = max_magnitude * NOISE_THRESHOLD_RATIO
 
     significant = [c for c in contributions if abs(c["shap_contribution"]) >= threshold]
     n_increasing = sum(1 for c in significant if c["direction"] == "increases_approval")
@@ -83,15 +106,24 @@ def estimate_cognitive_load(shap_result: dict[str, Any], user_expertise: float) 
     )
 
     # Raw load: more significant factors + more conflict => higher load
-    raw_load = min(1.0, (len(significant) / 8.0) * 0.6 + conflict_score * 0.4)
+    raw_load = min(
+        1.0,
+        (len(significant) / MAX_FACTORS_FOR_FULL_LOAD) * FACTOR_COUNT_WEIGHT
+        + conflict_score * CONFLICT_WEIGHT,
+    )
 
-    # A more expert user can absorb higher raw load before it becomes a problem
-    perceived_load = raw_load * (1.5 - user_expertise)  # expertise 0 -> x1.5, expertise 1 -> x0.5
+    # A more expert user can absorb higher raw load before it becomes a problem.
+    # Linear interpolation: expertise 0 -> x1.5 (NOVICE_LOAD_MULTIPLIER),
+    # expertise 1 -> x0.5 (EXPERT_LOAD_MULTIPLIER).
+    load_multiplier = NOVICE_LOAD_MULTIPLIER - user_expertise * (
+        NOVICE_LOAD_MULTIPLIER - EXPERT_LOAD_MULTIPLIER
+    )
+    perceived_load = raw_load * load_multiplier
     perceived_load = max(0.0, min(1.0, perceived_load))
 
-    if perceived_load > 0.7:
+    if perceived_load > SIMPLIFY_THRESHOLD:
         recommendation = "simplify"
-    elif perceived_load > 0.4:
+    elif perceived_load > STANDARD_THRESHOLD:
         recommendation = "standard"
     else:
         recommendation = "can_show_full_detail"
@@ -258,7 +290,7 @@ def recommend_explanation_strategy(
 
     rationale: list[str] = []
 
-    detail_level = detail_override or profile["preferred_detail_level"]
+    detail_level = resolve_detail_level(user_id, detail_override, profile=profile)
     if not detail_override:
         rationale.append(f"Using learned preference for user '{user_id}': {detail_level}")
     else:

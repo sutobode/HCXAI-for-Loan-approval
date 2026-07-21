@@ -585,11 +585,11 @@ cd backend
 pytest -v
 ```
 
-63 tests across 9 files:
+70 tests across 9 files:
 
 | File | Covers |
 |---|---|
-| `test_auth.py` | JWT auth, RBAC enforcement, default admin bootstrap, ownership checks on per-user HCXAI endpoints, change-password flow |
+| `test_auth.py` | JWT auth, RBAC enforcement, default admin bootstrap, read-path ownership checks (Trust Dashboard/Explanation History/Satisfaction), write-path ownership checks (`/explain`, `/feedback` cannot be spoofed by a customer acting as another user), change-password flow, register/feedback audit logging |
 | `test_data_processing.py` | Dataset loading/encoding |
 | `test_deepseek_client.py` | Narrative generation (mocked, no network dependency) |
 | `test_explainer.py` | SHAP prediction + explanation correctness (approved/rejected cases, contribution ordering) |
@@ -635,9 +635,15 @@ npm run build      # production build + lint
   if/else heuristics by design — there is no black-box meta-model deciding
   what a user sees, which matters for the platform's own governance story.
 - Per-user HCXAI endpoints (Trust Dashboard, Explanation History, Explanation
-  Satisfaction when scoped to a `user_id`) enforce an ownership check
-  server-side: a user can only read their own data unless they hold the
-  `admin` or `risk_manager` role. See `main._require_self_or_privileged`.
+  Satisfaction when scoped to a `user_id`) enforce a **read-path** ownership
+  check server-side: a user can only read their own data unless they hold
+  the `admin` or `risk_manager` role. See `main._require_self_or_privileged`.
+- `/explain` and `/feedback` accept a free-text `user_id` field so staff can
+  act on behalf of a customer. A **write-path** ownership check
+  (`main._require_matching_user_id_for_customers`) ensures a `customer`
+  account can only ever submit under their *own* email; staff roles
+  (`admin`, `risk_manager`, `loan_officer`) are exempt since processing an
+  application on a customer's behalf is their normal job.
 - The DeepSeek client is created with `max_retries=0`. Combined with
   `DEEPSEEK_TIMEOUT_SECONDS` (default 8s), this bounds the worst-case wait for
   a single unreachable-network call to ~8s before falling back to the
@@ -675,7 +681,7 @@ demo_seminar1/
 │   │   ├── deepseek_client.py
 │   │   ├── schemas.py
 │   │   └── main.py
-│   ├── tests/                  # pytest suite (56 tests, 9 files)
+│   ├── tests/                  # pytest suite (70 tests, 9 files)
 │   ├── models/                 # Trained model artifacts (gitignored)
 │   │   └── versions/<label>/   # model.joblib, encoders.joblib, metadata.json
 │   ├── data/                   # SQLite database file (gitignored)
