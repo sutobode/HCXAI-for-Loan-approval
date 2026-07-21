@@ -36,7 +36,7 @@ export default function OverrideAnalysisPage() {
       type: "category",
       data: buckets.map((b) => b.confidence_range),
       axisLabel: { color: textColor },
-      name: "AI confidence at prediction time",
+      name: "Độ tin cậy của AI tại thời điểm dự đoán",
       nameLocation: "middle",
       nameGap: 30,
       nameTextStyle: { color: textColor },
@@ -46,7 +46,7 @@ export default function OverrideAnalysisPage() {
       max: 1,
       axisLabel: { color: textColor, formatter: (v: number) => `${Math.round(v * 100)}%` },
       splitLine: { lineStyle: { color: isDark ? "#333" : "#eee" } },
-      name: "Human disagreement rate",
+      name: "Tỷ lệ không đồng ý của con người",
       nameTextStyle: { color: textColor },
     },
     series: [
@@ -68,15 +68,15 @@ export default function OverrideAnalysisPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Human Override Analysis"
-        description="Disagreement rate bucketed by the AI's confidence at prediction time — a well-calibrated pattern shows fewer disagreements as confidence increases."
+        title="Phân tích Ghi đè của Con người"
+        description="Tỷ lệ không đồng ý được phân theo từng mức độ tin cậy của AI tại thời điểm dự đoán — một mô hình cân chỉnh tốt sẽ cho thấy tỷ lệ không đồng ý giảm khi độ tin cậy tăng."
       />
 
       <Card>
         <CardContent className="flex items-end gap-3 p-4">
           <div className="flex-1">
             <Label htmlFor="scope-user" className="mb-1.5">
-              Filter by user (leave blank for platform-wide)
+              Lọc theo người dùng (để trống để xem toàn hệ thống)
             </Label>
             <Input
               id="scope-user"
@@ -85,7 +85,7 @@ export default function OverrideAnalysisPage() {
               onChange={(e) => setUserId(e.target.value)}
             />
           </div>
-          <Button onClick={() => setQueryUserId(userId || undefined)}>Apply</Button>
+          <Button onClick={() => setQueryUserId(userId || undefined)}>Áp dụng</Button>
         </CardContent>
       </Card>
 
@@ -102,21 +102,21 @@ export default function OverrideAnalysisPage() {
               )}
               <AlertTitle>
                 {data.by_confidence.well_calibrated_pattern
-                  ? "Well-calibrated override pattern"
-                  : "Miscalibrated override pattern"}
+                  ? "Xu hướng ghi đè cân chỉnh tốt"
+                  : "Xu hướng ghi đè chưa cân chỉnh tốt"}
               </AlertTitle>
               <AlertDescription>
                 {data.by_confidence.well_calibrated_pattern
-                  ? "Disagreement rate decreases (or stays flat) as AI confidence increases, as expected."
-                  : "Disagreement rate does not consistently decrease with AI confidence — this may indicate miscalibrated trust."}
+                  ? "Tỷ lệ không đồng ý giảm (hoặc giữ nguyên) khi độ tin cậy của AI tăng, đúng như kỳ vọng."
+                  : "Tỷ lệ không đồng ý không giảm ổn định theo độ tin cậy của AI — điều này có thể cho thấy mức độ tin tưởng chưa được cân chỉnh đúng."}
               </AlertDescription>
             </Alert>
           )}
 
           <Card>
             <CardHeader>
-              <CardTitle>Disagreement rate by confidence bucket</CardTitle>
-              <CardDescription>Scope: {data.by_confidence.scope}</CardDescription>
+              <CardTitle>Tỷ lệ không đồng ý theo mức độ tin cậy</CardTitle>
+              <CardDescription>Phạm vi: {data.by_confidence.scope === "platform-wide" ? "toàn hệ thống" : data.by_confidence.scope}</CardDescription>
             </CardHeader>
             <CardContent>
               <ReactECharts option={option} style={{ height: 320 }} opts={{ renderer: "svg" }} />
@@ -128,23 +128,23 @@ export default function OverrideAnalysisPage() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-base">
                   <GitCompareArrows className="size-4 text-primary" />
-                  Override direction (risk tolerance)
+                  Xu hướng ghi đè (mức độ chấp nhận rủi ro)
                 </CardTitle>
                 <CardDescription>
-                  {data.direction.total_overrides} total overrides for this scope
+                  {data.direction.total_overrides} lượt ghi đè trong phạm vi này
                 </CardDescription>
               </CardHeader>
               <CardContent className="grid grid-cols-2 gap-4 sm:grid-cols-3">
                 <div>
-                  <p className="text-xs text-muted-foreground">Reject → Approve (lenient)</p>
+                  <p className="text-xs text-muted-foreground">Từ chối → Duyệt (dễ dãi)</p>
                   <p className="font-heading text-xl font-semibold">{data.direction.reject_to_approve_count}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-muted-foreground">Approve → Reject (conservative)</p>
+                  <p className="text-xs text-muted-foreground">Duyệt → Từ chối (thận trọng)</p>
                   <p className="font-heading text-xl font-semibold">{data.direction.approve_to_reject_count}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-muted-foreground">Risk tolerance score</p>
+                  <p className="text-xs text-muted-foreground">Điểm chấp nhận rủi ro</p>
                   <p className="font-heading text-xl font-semibold">
                     {data.direction.risk_tolerance !== null ? data.direction.risk_tolerance.toFixed(2) : "—"}
                   </p>

@@ -28,10 +28,10 @@ import ReactECharts from "echarts-for-react";
 import { useTheme } from "next-themes";
 
 const SWEEP_FEATURES = [
-  { value: "cibil_score", label: "Credit score" },
-  { value: "income_annum", label: "Annual income" },
-  { value: "loan_amount", label: "Loan amount" },
-  { value: "loan_term", label: "Loan term" },
+  { value: "cibil_score", label: "Điểm tín dụng" },
+  { value: "income_annum", label: "Thu nhập hàng năm" },
+  { value: "loan_amount", label: "Số tiền vay" },
+  { value: "loan_term", label: "Thời hạn vay" },
 ];
 
 function SensitivityChart({ result }: { result: SensitivityResult }) {
@@ -44,13 +44,13 @@ function SensitivityChart({ result }: { result: SensitivityResult }) {
     tooltip: { trigger: "axis" },
     xAxis: {
       type: "value",
-      name: "Feature value",
+      name: "Giá trị yếu tố",
       axisLabel: { color: textColor },
       nameTextStyle: { color: textColor },
     },
     yAxis: {
       type: "value",
-      name: "Approval probability",
+      name: "Xác suất duyệt",
       min: 0,
       max: 1,
       axisLabel: { color: textColor, formatter: (v: number) => `${Math.round(v * 100)}%` },
@@ -91,7 +91,7 @@ export default function WhatIfPage() {
 
   async function handleBaseSubmit(values: LoanApplication) {
     setBaseValues(values as LoanApplicationFormValues);
-    toast.success("Base scenario updated");
+    toast.success("Đã cập nhật kịch bản gốc");
   }
 
   async function handleRunWhatIf() {
@@ -123,20 +123,20 @@ export default function WhatIfPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Interactive What-If Lab"
-        description="Explore how changing one feature affects the model's decision, and visualize the approval decision boundary."
+        title="Phòng thí nghiệm Giả định"
+        description="Khám phá việc thay đổi một yếu tố ảnh hưởng đến quyết định của mô hình như thế nào, và trực quan hóa ranh giới quyết định duyệt."
       />
 
       <Card>
         <CardHeader>
-          <CardTitle>Base scenario</CardTitle>
-          <CardDescription>Set the baseline application used for comparisons below.</CardDescription>
+          <CardTitle>Kịch bản gốc</CardTitle>
+          <CardDescription>Thiết lập hồ sơ nền dùng để so sánh bên dưới.</CardDescription>
         </CardHeader>
         <CardContent>
           <LoanApplicationForm
             defaultValues={baseValues}
             onSubmit={handleBaseSubmit}
-            submitLabel="Save base scenario"
+            submitLabel="Lưu kịch bản gốc"
           />
         </CardContent>
       </Card>
@@ -146,13 +146,13 @@ export default function WhatIfPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <FlaskConical className="size-4 text-primary" />
-              Single override comparison
+              So sánh thay đổi một yếu tố
             </CardTitle>
-            <CardDescription>Change one feature and compare the resulting decision.</CardDescription>
+            <CardDescription>Thay đổi một yếu tố và so sánh kết quả quyết định.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-center gap-3">
-              <Label className="w-28 shrink-0">Feature</Label>
+              <Label className="w-28 shrink-0">Yếu tố</Label>
               <Select value={overrideFeature} onValueChange={(v) => v && setOverrideFeature(v)}>
                 <SelectTrigger className="flex-1">
                   <SelectValue />
@@ -167,7 +167,7 @@ export default function WhatIfPage() {
               </Select>
             </div>
             <div className="flex items-center gap-3">
-              <Label className="w-28 shrink-0">New value</Label>
+              <Label className="w-28 shrink-0">Giá trị mới</Label>
               <input
                 type="number"
                 value={overrideValue}
@@ -176,16 +176,16 @@ export default function WhatIfPage() {
               />
             </div>
             <Button onClick={handleRunWhatIf} disabled={isRunningWhatIf} className="w-full">
-              Run comparison
+              Chạy so sánh
             </Button>
 
             {whatIfResult && (
               <div className="mt-4 space-y-3 rounded-lg border p-4">
                 <div className="flex items-center justify-center gap-4">
                   <div className="text-center">
-                    <p className="text-xs text-muted-foreground">Base</p>
+                    <p className="text-xs text-muted-foreground">Gốc</p>
                     <Badge variant={whatIfResult.base_prediction.prediction === "Approved" ? "default" : "destructive"}>
-                      {whatIfResult.base_prediction.prediction}
+                      {whatIfResult.base_prediction.prediction === "Approved" ? "Được duyệt" : "Bị từ chối"}
                     </Badge>
                     <p className="mt-1 text-sm font-medium">
                       {Math.round(whatIfResult.base_prediction.approval_probability * 100)}%
@@ -193,9 +193,9 @@ export default function WhatIfPage() {
                   </div>
                   <ArrowRight className="size-5 text-muted-foreground" />
                   <div className="text-center">
-                    <p className="text-xs text-muted-foreground">After override</p>
+                    <p className="text-xs text-muted-foreground">Sau khi thay đổi</p>
                     <Badge variant={whatIfResult.updated_prediction.prediction === "Approved" ? "default" : "destructive"}>
-                      {whatIfResult.updated_prediction.prediction}
+                      {whatIfResult.updated_prediction.prediction === "Approved" ? "Được duyệt" : "Bị từ chối"}
                     </Badge>
                     <p className="mt-1 text-sm font-medium">
                       {Math.round(whatIfResult.updated_prediction.approval_probability * 100)}%
@@ -204,11 +204,11 @@ export default function WhatIfPage() {
                 </div>
                 <p className="text-center text-sm">
                   {whatIfResult.decision_changed ? (
-                    <span className="font-medium text-warning">Decision changed!</span>
+                    <span className="font-medium text-warning">Quyết định đã thay đổi!</span>
                   ) : (
-                    <span className="text-muted-foreground">Decision did not change.</span>
+                    <span className="text-muted-foreground">Quyết định không thay đổi.</span>
                   )}{" "}
-                  Probability delta: {(whatIfResult.probability_delta * 100).toFixed(1)}pp
+                  Chênh lệch xác suất: {(whatIfResult.probability_delta * 100).toFixed(1)} điểm %
                 </p>
               </div>
             )}
@@ -217,12 +217,12 @@ export default function WhatIfPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Sensitivity sweep</CardTitle>
-            <CardDescription>Visualize the decision boundary as one feature varies.</CardDescription>
+            <CardTitle>Phân tích độ nhạy</CardTitle>
+            <CardDescription>Trực quan hóa ranh giới quyết định khi một yếu tố thay đổi.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-center gap-3">
-              <Label className="w-28 shrink-0">Feature</Label>
+              <Label className="w-28 shrink-0">Yếu tố</Label>
               <Select value={sweepFeature} onValueChange={(v) => v && setSweepFeature(v)}>
                 <SelectTrigger className="flex-1">
                   <SelectValue />
@@ -237,7 +237,7 @@ export default function WhatIfPage() {
               </Select>
             </div>
             <Button onClick={handleRunSweep} disabled={isRunningSweep} className="w-full">
-              Run sensitivity sweep
+              Chạy phân tích độ nhạy
             </Button>
             {sensitivityResult && <SensitivityChart result={sensitivityResult} />}
           </CardContent>

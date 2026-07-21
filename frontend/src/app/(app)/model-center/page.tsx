@@ -46,33 +46,33 @@ export default function ModelCenterPage() {
   });
 
   const trainMutation = useMutation({
-    mutationFn: () => trainModelVersion({ notes: "Manual retrain from Model Center", activate: true }),
+    mutationFn: () => trainModelVersion({ notes: "Huấn luyện lại thủ công từ Trung tâm Mô hình", activate: true }),
     onSuccess: (result) => {
-      toast.success(`Trained and activated ${result.version_label}`);
+      toast.success(`Đã huấn luyện và kích hoạt ${result.version_label}`);
       queryClient.invalidateQueries({ queryKey: ["model-versions"] });
     },
-    onError: (error) => toast.error(getApiErrorMessage(error, "Training failed")),
+    onError: (error) => toast.error(getApiErrorMessage(error, "Huấn luyện thất bại")),
   });
 
   const activateMutation = useMutation({
     mutationFn: (label: string) => activateModelVersion(label),
     onSuccess: (result) => {
-      toast.success(`Activated ${result.version_label} as the new champion`);
+      toast.success(`Đã kích hoạt ${result.version_label} làm phiên bản chính`);
       queryClient.invalidateQueries({ queryKey: ["model-versions"] });
     },
-    onError: (error) => toast.error(getApiErrorMessage(error, "Activation failed")),
+    onError: (error) => toast.error(getApiErrorMessage(error, "Kích hoạt thất bại")),
   });
 
   return (
     <div className="space-y-6">
       <PageHeader
-        title="AI Model Center"
-        description="Model Registry, Experiment Tracking, and Champion-Challenger management for the loan-approval model."
+        title="Trung tâm Mô hình AI"
+        description="Quản lý Danh mục Mô hình, Theo dõi Thực nghiệm, và cơ chế Phiên bản chính - Phiên bản thử nghiệm cho mô hình duyệt vay."
         actions={
           isAdmin ? (
             <Button onClick={() => trainMutation.mutate()} disabled={trainMutation.isPending}>
               <PlayCircle className="size-4" />
-              {trainMutation.isPending ? "Training..." : "Train new version"}
+              {trainMutation.isPending ? "Đang huấn luyện..." : "Huấn luyện phiên bản mới"}
             </Button>
           ) : undefined
         }
@@ -82,10 +82,10 @@ export default function ModelCenterPage() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Cpu className="size-4 text-primary" />
-            Model versions
+            Các phiên bản mô hình
           </CardTitle>
           <CardDescription>
-            Every trained version is preserved with full artifacts and evaluation metrics.
+            Mỗi phiên bản đã huấn luyện đều được lưu trữ đầy đủ cùng chỉ số đánh giá.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -95,14 +95,14 @@ export default function ModelCenterPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Version</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Algorithm</TableHead>
-                  <TableHead>Accuracy</TableHead>
+                  <TableHead>Phiên bản</TableHead>
+                  <TableHead>Trạng thái</TableHead>
+                  <TableHead>Thuật toán</TableHead>
+                  <TableHead>Độ chính xác</TableHead>
                   <TableHead>F1</TableHead>
                   <TableHead>AUC</TableHead>
-                  <TableHead>Trained by</TableHead>
-                  <TableHead>Created</TableHead>
+                  <TableHead>Người huấn luyện</TableHead>
+                  <TableHead>Thời gian tạo</TableHead>
                   <TableHead />
                 </TableRow>
               </TableHeader>
@@ -114,10 +114,10 @@ export default function ModelCenterPage() {
                       {v.is_active ? (
                         <Badge className="gap-1">
                           <CheckCircle2 className="size-3" />
-                          Active (champion)
+                          Đang hoạt động (chính)
                         </Badge>
                       ) : (
-                        <Badge variant="outline">Inactive</Badge>
+                        <Badge variant="outline">Không hoạt động</Badge>
                       )}
                     </TableCell>
                     <TableCell>{v.algorithm}</TableCell>
@@ -126,7 +126,7 @@ export default function ModelCenterPage() {
                     <TableCell>{v.metrics.auc.toFixed(4)}</TableCell>
                     <TableCell className="text-sm text-muted-foreground">{v.trained_by}</TableCell>
                     <TableCell className="text-sm text-muted-foreground">
-                      {new Date(v.created_at).toLocaleString()}
+                      {new Date(v.created_at).toLocaleString("vi-VN")}
                     </TableCell>
                     <TableCell>
                       {isAdmin && !v.is_active && (
@@ -136,7 +136,7 @@ export default function ModelCenterPage() {
                           disabled={activateMutation.isPending}
                           onClick={() => activateMutation.mutate(v.version_label)}
                         >
-                          Activate
+                          Kích hoạt
                         </Button>
                       )}
                     </TableCell>
@@ -145,7 +145,7 @@ export default function ModelCenterPage() {
               </TableBody>
             </Table>
           ) : (
-            <p className="text-sm text-muted-foreground">No model versions trained yet.</p>
+            <p className="text-sm text-muted-foreground">Chưa có phiên bản mô hình nào được huấn luyện.</p>
           )}
         </CardContent>
       </Card>
@@ -155,15 +155,15 @@ export default function ModelCenterPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <GitCompareArrows className="size-4 text-primary" />
-              Champion-Challenger comparison
+              So sánh Phiên bản chính - Phiên bản thử nghiệm
             </CardTitle>
-            <CardDescription>Side-by-side metric comparison between any two versions.</CardDescription>
+            <CardDescription>So sánh song song các chỉ số giữa hai phiên bản bất kỳ.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex flex-wrap items-end gap-3">
               <Select value={compareA} onValueChange={(v) => v && setCompareA(v)}>
                 <SelectTrigger className="w-40">
-                  <SelectValue placeholder="Version A" />
+                  <SelectValue placeholder="Phiên bản A" />
                 </SelectTrigger>
                 <SelectContent>
                   {versions.map((v) => (
@@ -173,10 +173,10 @@ export default function ModelCenterPage() {
                   ))}
                 </SelectContent>
               </Select>
-              <span className="text-sm text-muted-foreground">vs.</span>
+              <span className="text-sm text-muted-foreground">so với</span>
               <Select value={compareB} onValueChange={(v) => v && setCompareB(v)}>
                 <SelectTrigger className="w-40">
-                  <SelectValue placeholder="Version B" />
+                  <SelectValue placeholder="Phiên bản B" />
                 </SelectTrigger>
                 <SelectContent>
                   {versions.map((v) => (
@@ -191,7 +191,7 @@ export default function ModelCenterPage() {
                 disabled={!compareA || !compareB || isComparing}
                 onClick={() => runComparison()}
               >
-                Compare
+                So sánh
               </Button>
             </div>
 

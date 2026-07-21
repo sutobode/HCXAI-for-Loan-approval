@@ -29,12 +29,12 @@ const DEFAULT_ADMIN_PASSWORD = "ChangeMe123!";
 
 const changePasswordSchema = z
   .object({
-    current_password: z.string().min(1, "Enter your current password"),
-    new_password: z.string().min(8, "New password must be at least 8 characters"),
-    confirm_password: z.string().min(1, "Confirm your new password"),
+    current_password: z.string().min(1, "Vui lòng nhập mật khẩu hiện tại"),
+    new_password: z.string().min(8, "Mật khẩu mới phải có ít nhất 8 ký tự"),
+    confirm_password: z.string().min(1, "Vui lòng xác nhận mật khẩu mới"),
   })
   .refine((data) => data.new_password === data.confirm_password, {
-    message: "Passwords do not match",
+    message: "Mật khẩu không khớp",
     path: ["confirm_password"],
   });
 
@@ -53,25 +53,25 @@ export default function SettingsPage() {
     mutationFn: (values: ChangePasswordFormValues) =>
       changePassword({ current_password: values.current_password, new_password: values.new_password }),
     onSuccess: () => {
-      toast.success("Password changed successfully");
+      toast.success("Đổi mật khẩu thành công");
       form.reset();
     },
-    onError: (error) => toast.error(getApiErrorMessage(error, "Failed to change password")),
+    onError: (error) => toast.error(getApiErrorMessage(error, "Đổi mật khẩu thất bại")),
   });
 
   return (
     <div className="max-w-lg space-y-6">
-      <PageHeader title="Settings" description="Manage your account security." />
+      <PageHeader title="Cài đặt" description="Quản lý bảo mật tài khoản của bạn." />
 
       {isDefaultAdmin && (
         <Alert variant="destructive">
           <ShieldAlert className="size-4" />
-          <AlertTitle>Change the default admin password</AlertTitle>
+          <AlertTitle>Hãy đổi mật khẩu quản trị mặc định</AlertTitle>
           <AlertDescription>
-            This account is still using the well-known default credentials
-            ({DEFAULT_ADMIN_EMAIL} / {DEFAULT_ADMIN_PASSWORD}). Anyone who has read the
-            project documentation knows this password — change it below before using
-            this account outside of local development.
+            Tài khoản này vẫn đang sử dụng thông tin đăng nhập mặc định đã biết công khai
+            ({DEFAULT_ADMIN_EMAIL} / {DEFAULT_ADMIN_PASSWORD}). Bất kỳ ai đã đọc tài liệu dự án
+            đều biết mật khẩu này — hãy đổi ngay bên dưới trước khi dùng tài khoản này
+            ngoài môi trường phát triển cục bộ.
           </AlertDescription>
         </Alert>
       )}
@@ -80,9 +80,9 @@ export default function SettingsPage() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <KeyRound className="size-4 text-primary" />
-            Change password
+            Đổi mật khẩu
           </CardTitle>
-          <CardDescription>Requires your current password.</CardDescription>
+          <CardDescription>Yêu cầu nhập mật khẩu hiện tại.</CardDescription>
         </CardHeader>
         <CardContent>
           <Form {...form}>
@@ -92,7 +92,7 @@ export default function SettingsPage() {
                 name="current_password"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Current password</FormLabel>
+                    <FormLabel>Mật khẩu hiện tại</FormLabel>
                     <FormControl>
                       <Input type="password" autoComplete="current-password" {...field} />
                     </FormControl>
@@ -105,7 +105,7 @@ export default function SettingsPage() {
                 name="new_password"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>New password</FormLabel>
+                    <FormLabel>Mật khẩu mới</FormLabel>
                     <FormControl>
                       <Input type="password" autoComplete="new-password" {...field} />
                     </FormControl>
@@ -118,7 +118,7 @@ export default function SettingsPage() {
                 name="confirm_password"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Confirm new password</FormLabel>
+                    <FormLabel>Xác nhận mật khẩu mới</FormLabel>
                     <FormControl>
                       <Input type="password" autoComplete="new-password" {...field} />
                     </FormControl>
@@ -127,7 +127,7 @@ export default function SettingsPage() {
                 )}
               />
               <Button type="submit" disabled={mutation.isPending} className="w-full">
-                {mutation.isPending ? "Changing..." : "Change password"}
+                {mutation.isPending ? "Đang xử lý..." : "Đổi mật khẩu"}
               </Button>
             </form>
           </Form>

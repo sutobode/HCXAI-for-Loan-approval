@@ -43,7 +43,7 @@ function GroupBarChart({ result }: { result: FairnessGroupResult }) {
           silent: true,
           symbol: "none",
           lineStyle: { color: "#ef4444", type: "dashed" },
-          label: { formatter: "80% rule", color: textColor },
+          label: { formatter: "Quy tắc 80%", color: textColor },
           data: [{ yAxis: (Math.max(...groups.map((g) => result.approval_rate_by_group[g])) * 0.8) }],
         },
       },
@@ -62,8 +62,8 @@ export default function FairnessPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Fairness & Responsible AI Center"
-        description="Demographic parity and four-fifths (80%) rule compliance checks across sensitive attributes."
+        title="Trung tâm Công bằng & AI Có trách nhiệm"
+        description="Kiểm tra tính công bằng nhân khẩu học và mức độ tuân thủ quy tắc bốn phần năm (80%) trên các thuộc tính nhạy cảm."
       />
 
       {isLoading ? (
@@ -81,26 +81,26 @@ export default function FairnessPage() {
             )}
             <AlertTitle>
               {data.compliance_summary.overall_compliant
-                ? "Model passes fairness checks"
-                : "Fairness violations detected"}
+                ? "Mô hình đạt các kiểm tra công bằng"
+                : "Phát hiện vi phạm về công bằng"}
             </AlertTitle>
             <AlertDescription>
               {data.compliance_summary.overall_compliant
-                ? `All ${data.compliance_summary.attributes_checked.length} checked attributes satisfy the four-fifths rule.`
-                : `Violations found in: ${data.compliance_summary.violations.join(", ")}`}
+                ? `Toàn bộ ${data.compliance_summary.attributes_checked.length} thuộc tính được kiểm tra đều thỏa quy tắc bốn phần năm.`
+                : `Phát hiện vi phạm ở: ${data.compliance_summary.violations.join(", ")}`}
             </AlertDescription>
           </Alert>
 
           <div className="grid gap-4 sm:grid-cols-3">
             <Card>
               <CardContent className="p-5">
-                <p className="text-sm text-muted-foreground">Samples analyzed</p>
+                <p className="text-sm text-muted-foreground">Số mẫu phân tích</p>
                 <p className="mt-1 font-heading text-2xl font-semibold">{data.n_samples.toLocaleString()}</p>
               </CardContent>
             </Card>
             <Card>
               <CardContent className="p-5">
-                <p className="text-sm text-muted-foreground">Predicted approval rate</p>
+                <p className="text-sm text-muted-foreground">Tỷ lệ duyệt theo dự đoán</p>
                 <p className="mt-1 font-heading text-2xl font-semibold">
                   {Math.round(data.overall_approval_rate_predicted * 100)}%
                 </p>
@@ -108,7 +108,7 @@ export default function FairnessPage() {
             </Card>
             <Card>
               <CardContent className="p-5">
-                <p className="text-sm text-muted-foreground">Actual approval rate</p>
+                <p className="text-sm text-muted-foreground">Tỷ lệ duyệt thực tế</p>
                 <p className="mt-1 font-heading text-2xl font-semibold">
                   {Math.round(data.overall_approval_rate_actual * 100)}%
                 </p>
@@ -126,11 +126,11 @@ export default function FairnessPage() {
                       {attribute.replace("_", " ")}
                     </span>
                     <Badge variant={result.passes_four_fifths_rule ? "default" : "destructive"}>
-                      {result.passes_four_fifths_rule ? "Passes 80% rule" : "Fails 80% rule"}
+                      {result.passes_four_fifths_rule ? "Đạt quy tắc 80%" : "Không đạt quy tắc 80%"}
                     </Badge>
                   </CardTitle>
                   <CardDescription>
-                    Parity ratio: {result.parity_ratio !== null ? result.parity_ratio.toFixed(3) : "—"}
+                    Tỷ số công bằng: {result.parity_ratio !== null ? result.parity_ratio.toFixed(3) : "—"}
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -144,16 +144,16 @@ export default function FairnessPage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Gavel className="size-4 text-primary" />
-                Bias mitigation recommendations
+                Khuyến nghị giảm thiểu thiên lệch
               </CardTitle>
               <CardDescription>
-                Threshold-adjustment suggestions only — no automatic changes are ever applied.
+                Chỉ là gợi ý điều chỉnh ngưỡng — không có thay đổi nào được áp dụng tự động.
               </CardDescription>
             </CardHeader>
             <CardContent>
               {data.mitigation_recommendations.length === 0 ? (
                 <p className="text-sm text-muted-foreground">
-                  No mitigation needed — all checked attributes currently pass the four-fifths rule.
+                  Không cần giảm thiểu — tất cả thuộc tính được kiểm tra hiện đều đạt quy tắc bốn phần năm.
                 </p>
               ) : (
                 <div className="space-y-3">
@@ -162,13 +162,13 @@ export default function FairnessPage() {
                       <div className="mb-2 flex items-center justify-between">
                         <p className="font-medium capitalize">{rec.attribute.replace("_", " ")}</p>
                         <Badge variant="outline">
-                          {Math.round(rec.approval_rate_gap * 100)} pt gap
+                          Chênh lệch {Math.round(rec.approval_rate_gap * 100)} điểm %
                         </Badge>
                       </div>
                       <p className="text-sm text-muted-foreground">{rec.recommendation}</p>
                       {rec.requires_human_approval && (
                         <Badge variant="secondary" className="mt-2">
-                          Requires compliance officer approval
+                          Cần phê duyệt của cán bộ tuân thủ
                         </Badge>
                       )}
                     </div>

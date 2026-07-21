@@ -46,15 +46,15 @@ export default function ApplicationDetailPage() {
 
   const limeMutation = useMutation({
     mutationFn: () => explainWithLime(applicationFeatures!),
-    onError: (error) => toast.error(getApiErrorMessage(error, "LIME explanation failed")),
+    onError: (error) => toast.error(getApiErrorMessage(error, "Giải thích LIME thất bại")),
   });
   const counterfactualMutation = useMutation({
     mutationFn: () => explainWithCounterfactual(applicationFeatures!, 3),
-    onError: (error) => toast.error(getApiErrorMessage(error, "Counterfactual search failed")),
+    onError: (error) => toast.error(getApiErrorMessage(error, "Tìm kiếm phản chứng thất bại")),
   });
   const qualityMutation = useMutation({
     mutationFn: () => getExplanationQuality(applicationFeatures!),
-    onError: (error) => toast.error(getApiErrorMessage(error, "Explanation quality check failed")),
+    onError: (error) => toast.error(getApiErrorMessage(error, "Kiểm tra chất lượng giải thích thất bại")),
   });
 
   if (isLoading) {
@@ -72,10 +72,10 @@ export default function ApplicationDetailPage() {
   if (isError || !data) {
     return (
       <div className="flex flex-col items-center justify-center gap-3 py-24 text-center">
-        <p className="font-medium">Prediction not found</p>
+        <p className="font-medium">Không tìm thấy hồ sơ</p>
         <Button variant="outline" onClick={() => router.push("/applications")}>
           <ArrowLeft className="size-4" />
-          Back to Loan Queue
+          Về danh sách hồ sơ
         </Button>
       </div>
     );
@@ -84,12 +84,12 @@ export default function ApplicationDetailPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title={`Application #${data.id}`}
-        description={`Submitted ${new Date(data.created_at).toLocaleString()}`}
+        title={`Hồ sơ #${data.id}`}
+        description={`Nộp lúc ${new Date(data.created_at).toLocaleString("vi-VN")}`}
         actions={
           <Button variant="outline" onClick={() => router.push("/applications")}>
             <ArrowLeft className="size-4" />
-            Back
+            Quay lại
           </Button>
         }
       />
@@ -98,13 +98,13 @@ export default function ApplicationDetailPage() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              Decision
+              Quyết định
               <Badge variant={data.prediction === "Approved" ? "default" : "destructive"}>
-                {data.prediction}
+                {data.prediction === "Approved" ? "Được duyệt" : "Bị từ chối"}
               </Badge>
             </CardTitle>
             <CardDescription>
-              Confidence: {Math.round(data.confidence * 100)}%
+              Độ tin cậy: {Math.round(data.confidence * 100)}%
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -114,11 +114,11 @@ export default function ApplicationDetailPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>AI narrative {data.narrative_model ? `(${data.narrative_model})` : ""}</CardTitle>
+            <CardTitle>Diễn giải từ AI {data.narrative_model ? `(${data.narrative_model})` : ""}</CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-sm leading-relaxed whitespace-pre-line">
-              {data.narrative ?? "No narrative was recorded for this prediction."}
+              {data.narrative ?? "Không có diễn giải nào được lưu cho hồ sơ này."}
             </p>
           </CardContent>
         </Card>
@@ -126,8 +126,8 @@ export default function ApplicationDetailPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Feature contributions (SHAP)</CardTitle>
-          <CardDescription>Base value: {data.shap_result.base_value.toFixed(3)}</CardDescription>
+          <CardTitle>Mức độ ảnh hưởng của từng yếu tố (SHAP)</CardTitle>
+          <CardDescription>Giá trị cơ sở: {data.shap_result.base_value.toFixed(3)}</CardDescription>
         </CardHeader>
         <CardContent>
           <ShapChart contributions={data.shap_result.contributions} />
@@ -139,9 +139,9 @@ export default function ApplicationDetailPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base">
               <GitBranch className="size-4 text-primary" />
-              LIME cross-check
+              Đối chiếu với LIME
             </CardTitle>
-            <CardDescription>Independent local surrogate — agreement with SHAP builds confidence.</CardDescription>
+            <CardDescription>Mô hình thay thế cục bộ độc lập — nếu khớp với SHAP thì càng đáng tin cậy.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
             {!limeMutation.data ? (
@@ -151,12 +151,12 @@ export default function ApplicationDetailPage() {
                 disabled={!applicationFeatures || limeMutation.isPending}
                 onClick={() => limeMutation.mutate()}
               >
-                {limeMutation.isPending ? "Running LIME..." : "Run LIME explanation"}
+                {limeMutation.isPending ? "Đang chạy LIME..." : "Chạy giải thích LIME"}
               </Button>
             ) : (
               <>
                 <p className="text-xs text-muted-foreground">
-                  Fidelity R&sup2;: {limeMutation.data.fidelity_r2 !== null ? limeMutation.data.fidelity_r2.toFixed(3) : "—"}
+                  Độ khớp R&sup2;: {limeMutation.data.fidelity_r2 !== null ? limeMutation.data.fidelity_r2.toFixed(3) : "—"}
                 </p>
                 <ul className="space-y-1.5 text-sm">
                   {limeMutation.data.contributions.slice(0, 5).map((c) => (
@@ -178,9 +178,9 @@ export default function ApplicationDetailPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base">
               <Scale className="size-4 text-primary" />
-              Counterfactual
+              Phản chứng
             </CardTitle>
-            <CardDescription>Minimal changes that would flip this decision.</CardDescription>
+            <CardDescription>Những thay đổi nhỏ nhất có thể đổi ngược quyết định này.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
             {!counterfactualMutation.data ? (
@@ -190,16 +190,16 @@ export default function ApplicationDetailPage() {
                 disabled={!applicationFeatures || counterfactualMutation.isPending}
                 onClick={() => counterfactualMutation.mutate()}
               >
-                {counterfactualMutation.isPending ? "Searching..." : "Find counterfactuals"}
+                {counterfactualMutation.isPending ? "Đang tìm kiếm..." : "Tìm phản chứng"}
               </Button>
             ) : counterfactualMutation.data.counterfactuals.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No counterfactual found within search bounds.</p>
+              <p className="text-sm text-muted-foreground">Không tìm được phản chứng trong phạm vi tìm kiếm.</p>
             ) : (
               <div className="space-y-3">
                 {counterfactualMutation.data.counterfactuals.map((cf, i) => (
                   <div key={i} className="rounded-lg border p-2.5 text-sm">
                     <p className="mb-1 font-medium">
-                      → {cf.resulting_decision} ({Math.round(cf.resulting_probability * 100)}%)
+                      → {cf.resulting_decision === "Approved" ? "Được duyệt" : "Bị từ chối"} ({Math.round(cf.resulting_probability * 100)}%)
                     </p>
                     {cf.changes.map((ch) => (
                       <p key={ch.feature} className="text-xs text-muted-foreground">
@@ -217,9 +217,9 @@ export default function ApplicationDetailPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base">
               <Gauge className="size-4 text-primary" />
-              Explanation quality
+              Chất lượng giải thích
             </CardTitle>
-            <CardDescription>Stability, completeness, and sparsity of this SHAP explanation.</CardDescription>
+            <CardDescription>Độ ổn định, độ đầy đủ, và độ cô đọng của giải thích SHAP này.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
             {!qualityMutation.data ? (
@@ -229,28 +229,28 @@ export default function ApplicationDetailPage() {
                 disabled={!applicationFeatures || qualityMutation.isPending}
                 onClick={() => qualityMutation.mutate()}
               >
-                {qualityMutation.isPending ? "Computing..." : "Run quality check"}
+                {qualityMutation.isPending ? "Đang tính toán..." : "Kiểm tra chất lượng"}
               </Button>
             ) : (
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Composite score</span>
+                  <span className="text-muted-foreground">Điểm tổng hợp</span>
                   <span className="font-medium">{qualityMutation.data.composite_quality_score.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Stability</span>
+                  <span className="text-muted-foreground">Độ ổn định</span>
                   <Badge variant="outline" className="capitalize">
                     {qualityMutation.data.stability.interpretation.replace("_", " ")}
                   </Badge>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">SHAP additivity</span>
+                  <span className="text-muted-foreground">Tính đầy đủ SHAP</span>
                   <Badge variant={qualityMutation.data.completeness.is_complete ? "default" : "destructive"}>
-                    {qualityMutation.data.completeness.is_complete ? "Verified" : "Failed"}
+                    {qualityMutation.data.completeness.is_complete ? "Đã xác nhận" : "Không đạt"}
                   </Badge>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Sparsity</span>
+                  <span className="text-muted-foreground">Độ cô đọng</span>
                   <Badge variant="outline" className="capitalize">
                     {qualityMutation.data.sparsity.interpretation}
                   </Badge>
@@ -265,13 +265,13 @@ export default function ApplicationDetailPage() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
             <MessageSquare className="size-4" />
-            Feedback history
+            Lịch sử phản hồi
           </CardTitle>
-          <CardDescription>Human decisions recorded against this prediction.</CardDescription>
+          <CardDescription>Các quyết định của con người được ghi nhận trên hồ sơ này.</CardDescription>
         </CardHeader>
         <CardContent>
           {data.feedback.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No feedback submitted yet.</p>
+            <p className="text-sm text-muted-foreground">Chưa có phản hồi nào được gửi.</p>
           ) : (
             <div className="space-y-3">
               {data.feedback.map((f) => (
@@ -279,12 +279,12 @@ export default function ApplicationDetailPage() {
                   <div>
                     <p className="text-sm font-medium">
                       {f.user_id} &middot; <span className="capitalize">{f.action}</span>
-                      {f.human_decision ? ` → ${f.human_decision}` : ""}
+                      {f.human_decision ? ` → ${f.human_decision === "Approved" ? "Được duyệt" : "Bị từ chối"}` : ""}
                     </p>
                     {f.comment && <p className="mt-1 text-sm text-muted-foreground">{f.comment}</p>}
                   </div>
                   <span className="text-xs text-muted-foreground">
-                    {new Date(f.created_at).toLocaleString()}
+                    {new Date(f.created_at).toLocaleString("vi-VN")}
                   </span>
                 </div>
               ))}

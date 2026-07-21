@@ -14,9 +14,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "HCXAI Loan Approval Platform",
+  title: "Hệ thống HCXAI - Duyệt vay Thông minh",
   description:
-    "Human-Centered Explainable AI platform for intelligent, transparent, and fair loan approval decisions.",
+    "Nền tảng Trí tuệ Nhân tạo Giải thích được, Lấy Con người làm Trung tâm (HCXAI) cho các quyết định duyệt vay thông minh, minh bạch và công bằng.",
 };
 
 export default function RootLayout({
@@ -25,7 +25,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="vi" suppressHydrationWarning>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >

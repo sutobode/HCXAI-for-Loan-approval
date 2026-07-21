@@ -41,12 +41,12 @@ export default function ApplicationsPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Loan Queue"
-        description="Browse and filter all scored loan applications."
+        title="Danh sách hồ sơ vay"
+        description="Xem và lọc toàn bộ hồ sơ vay đã được chấm điểm."
         actions={
           <Button nativeButton={false} render={<Link href="/applications/new" />}>
             <FilePlus2 className="size-4" />
-            New application
+            Hồ sơ mới
           </Button>
         }
       />
@@ -55,20 +55,20 @@ export default function ApplicationsPage() {
         <CardContent className="p-0">
           <div className="flex flex-wrap items-center justify-between gap-3 border-b p-4">
             <div className="flex items-center gap-2">
-              <span className="text-sm text-muted-foreground">Status</span>
+              <span className="text-sm text-muted-foreground">Trạng thái</span>
               <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as typeof statusFilter)}>
                 <SelectTrigger className="w-40">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All</SelectItem>
-                  <SelectItem value="Approved">Approved</SelectItem>
-                  <SelectItem value="Rejected">Rejected</SelectItem>
+                  <SelectItem value="all">Tất cả</SelectItem>
+                  <SelectItem value="Approved">Được duyệt</SelectItem>
+                  <SelectItem value="Rejected">Bị từ chối</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-sm text-muted-foreground">Rows</span>
+              <span className="text-sm text-muted-foreground">Số dòng</span>
               <Select value={String(pageSize)} onValueChange={(v) => { setPageSize(Number(v)); setPage(0); }}>
                 <SelectTrigger className="w-24">
                   <SelectValue />
@@ -92,19 +92,19 @@ export default function ApplicationsPage() {
             </div>
           ) : filteredItems.length === 0 ? (
             <p className="py-16 text-center text-sm text-muted-foreground">
-              No applications match this filter.
+              Không có hồ sơ nào khớp với bộ lọc này.
             </p>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>ID</TableHead>
-                  <TableHead>Decision</TableHead>
-                  <TableHead>Approval probability</TableHead>
-                  <TableHead>Risk score</TableHead>
-                  <TableHead>Confidence</TableHead>
-                  <TableHead>Submitted</TableHead>
-                  <TableHead className="text-right">Action</TableHead>
+                  <TableHead>Mã</TableHead>
+                  <TableHead>Quyết định</TableHead>
+                  <TableHead>Xác suất duyệt</TableHead>
+                  <TableHead>Điểm rủi ro</TableHead>
+                  <TableHead>Độ tin cậy</TableHead>
+                  <TableHead>Thời gian nộp</TableHead>
+                  <TableHead className="text-right">Hành động</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -113,18 +113,18 @@ export default function ApplicationsPage() {
                     <TableCell className="font-mono text-xs">#{p.id}</TableCell>
                     <TableCell>
                       <Badge variant={p.prediction === "Approved" ? "default" : "destructive"}>
-                        {p.prediction}
+                        {p.prediction === "Approved" ? "Được duyệt" : "Bị từ chối"}
                       </Badge>
                     </TableCell>
                     <TableCell>{Math.round(p.approval_probability * 100)}%</TableCell>
                     <TableCell>{Math.round(p.risk_score * 100)}%</TableCell>
                     <TableCell>{Math.round(p.confidence * 100)}%</TableCell>
                     <TableCell className="text-xs text-muted-foreground">
-                      {new Date(p.created_at).toLocaleString()}
+                      {new Date(p.created_at).toLocaleString("vi-VN")}
                     </TableCell>
                     <TableCell className="text-right">
                       <Button variant="ghost" size="sm" nativeButton={false} render={<Link href={`/applications/${p.id}`} />}>
-                        View
+                        Xem
                       </Button>
                     </TableCell>
                   </TableRow>
@@ -135,7 +135,7 @@ export default function ApplicationsPage() {
 
           <div className="flex items-center justify-between border-t p-4">
             <p className="text-xs text-muted-foreground">
-              Page {page + 1} of {totalPages} &middot; {data?.total ?? 0} total predictions
+              Trang {page + 1} / {totalPages} &middot; {data?.total ?? 0} hồ sơ
             </p>
             <div className="flex gap-2">
               <Button
@@ -145,7 +145,7 @@ export default function ApplicationsPage() {
                 onClick={() => setPage((p) => Math.max(0, p - 1))}
               >
                 <ChevronLeft className="size-4" />
-                Previous
+                Trước
               </Button>
               <Button
                 variant="outline"
@@ -153,7 +153,7 @@ export default function ApplicationsPage() {
                 disabled={page + 1 >= totalPages || isFetching}
                 onClick={() => setPage((p) => p + 1)}
               >
-                Next
+                Tiếp
                 <ChevronRight className="size-4" />
               </Button>
             </div>

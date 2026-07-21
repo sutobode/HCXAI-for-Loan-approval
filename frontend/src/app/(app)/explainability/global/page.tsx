@@ -62,8 +62,8 @@ export default function GlobalExplainabilityPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Global Explainability"
-        description="Aggregate SHAP feature importance across the dataset — how the model behaves overall, not just for one applicant."
+        title="Khả năng Giải thích Toàn cục"
+        description="Mức độ quan trọng tổng hợp của từng yếu tố (SHAP) trên toàn bộ dữ liệu — cách mô hình hoạt động chung, không chỉ riêng một hồ sơ."
       />
 
       {isLoading ? (
@@ -73,15 +73,15 @@ export default function GlobalExplainabilityPage() {
           <div className="grid gap-4 sm:grid-cols-2">
             <Card>
               <CardContent className="p-5">
-                <p className="text-sm text-muted-foreground">Sample size</p>
+                <p className="text-sm text-muted-foreground">Kích thước mẫu</p>
                 <p className="mt-1 font-heading text-2xl font-semibold">
-                  {data.sample_size.toLocaleString()} applications
+                  {data.sample_size.toLocaleString()} hồ sơ
                 </p>
               </CardContent>
             </Card>
             <Card>
               <CardContent className="p-5">
-                <p className="text-sm text-muted-foreground">Model base value (log-odds)</p>
+                <p className="text-sm text-muted-foreground">Giá trị cơ sở của mô hình (log-odds)</p>
                 <p className="mt-1 font-heading text-2xl font-semibold">{data.base_value.toFixed(3)}</p>
               </CardContent>
             </Card>
@@ -91,11 +91,11 @@ export default function GlobalExplainabilityPage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Layers className="size-4 text-primary" />
-                Feature importance ranking
+                Xếp hạng mức độ quan trọng của yếu tố
               </CardTitle>
               <CardDescription>
-                Mean absolute SHAP value per feature, as a share of total attribution. Green bars
-                increase approval likelihood on average, red bars decrease it.
+                Giá trị SHAP tuyệt đối trung bình của mỗi yếu tố, theo tỷ lệ trên tổng mức ảnh hưởng. Cột xanh
+                làm tăng khả năng duyệt trung bình, cột đỏ làm giảm khả năng đó.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -109,18 +109,18 @@ export default function GlobalExplainabilityPage() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Detailed breakdown</CardTitle>
-              <CardDescription>Mean and standard deviation of |SHAP| per feature.</CardDescription>
+              <CardTitle>Phân tích chi tiết</CardTitle>
+              <CardDescription>Trung bình và độ lệch chuẩn của |SHAP| cho mỗi yếu tố.</CardDescription>
             </CardHeader>
             <CardContent>
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Feature</TableHead>
-                    <TableHead>Relative importance</TableHead>
-                    <TableHead>Mean |SHAP|</TableHead>
-                    <TableHead>Std |SHAP|</TableHead>
-                    <TableHead>Overall direction</TableHead>
+                    <TableHead>Yếu tố</TableHead>
+                    <TableHead>Mức độ quan trọng tương đối</TableHead>
+                    <TableHead>|SHAP| trung bình</TableHead>
+                    <TableHead>|SHAP| độ lệch chuẩn</TableHead>
+                    <TableHead>Xu hướng tổng thể</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -132,7 +132,7 @@ export default function GlobalExplainabilityPage() {
                       <TableCell className="font-mono text-sm">{f.std_abs_shap.toFixed(4)}</TableCell>
                       <TableCell>
                         <Badge variant={f.overall_direction === "increases_approval" ? "default" : "destructive"}>
-                          {f.overall_direction === "increases_approval" ? "Increases approval" : "Decreases approval"}
+                          {f.overall_direction === "increases_approval" ? "Tăng khả năng duyệt" : "Giảm khả năng duyệt"}
                         </Badge>
                       </TableCell>
                     </TableRow>

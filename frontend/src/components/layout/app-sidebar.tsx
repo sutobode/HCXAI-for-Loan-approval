@@ -54,46 +54,46 @@ interface NavItem {
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { title: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { title: "Loan Queue", href: "/applications", icon: ListChecks },
-  { title: "Submit Application", href: "/applications/new", icon: FilePlus2 },
-  { title: "What-If Lab", href: "/whatif", icon: FlaskConical },
-  { title: "Similar Cases", href: "/similar-cases", icon: Users2 },
-  { title: "Trust Dashboard", href: "/trust", icon: ShieldCheck },
-  { title: "Explanation History", href: "/hcxai/explanation-history", icon: History },
+  { title: "Tổng quan", href: "/dashboard", icon: LayoutDashboard },
+  { title: "Danh sách hồ sơ vay", href: "/applications", icon: ListChecks },
+  { title: "Nộp hồ sơ vay", href: "/applications/new", icon: FilePlus2 },
+  { title: "Phòng thí nghiệm Giả định", href: "/whatif", icon: FlaskConical },
+  { title: "Hồ sơ tương tự", href: "/similar-cases", icon: Users2 },
+  { title: "Bảng Tin cậy", href: "/trust", icon: ShieldCheck },
+  { title: "Lịch sử Giải thích", href: "/hcxai/explanation-history", icon: History },
   {
-    title: "Override Analysis",
+    title: "Phân tích Ghi đè",
     href: "/hcxai/override-analysis",
     icon: GitCompareArrows,
     roles: ["admin", "risk_manager"],
   },
   {
-    title: "Global Explainability",
+    title: "Khả năng Giải thích Toàn cục",
     href: "/explainability/global",
     icon: Layers,
     roles: ["admin", "risk_manager", "loan_officer"],
   },
   {
-    title: "Fairness Report",
+    title: "Báo cáo Công bằng",
     href: "/fairness",
     icon: ShieldHalf,
     roles: ["admin", "risk_manager"],
   },
   {
-    title: "Model Monitoring",
+    title: "Giám sát Mô hình",
     href: "/monitoring",
     icon: ActivitySquare,
     roles: ["admin", "risk_manager"],
   },
   {
-    title: "AI Model Center",
+    title: "Trung tâm Mô hình AI",
     href: "/model-center",
     icon: Cpu,
     roles: ["admin", "risk_manager"],
   },
-  { title: "Admin · Users", href: "/admin/users", icon: Users2, roles: ["admin"] },
-  { title: "Admin · Audit Trail", href: "/admin/audit", icon: ScrollText, roles: ["admin"] },
-  { title: "Settings", href: "/settings", icon: Settings },
+  { title: "Quản trị · Người dùng", href: "/admin/users", icon: Users2, roles: ["admin"] },
+  { title: "Quản trị · Nhật ký Kiểm toán", href: "/admin/audit", icon: ScrollText, roles: ["admin"] },
+  { title: "Cài đặt", href: "/settings", icon: Settings },
 ];
 
 function initialsFromName(name: string) {
@@ -106,10 +106,10 @@ function initialsFromName(name: string) {
 }
 
 const ROLE_LABELS: Record<UserRole, string> = {
-  admin: "Administrator",
-  risk_manager: "Risk Manager",
-  loan_officer: "Loan Officer",
-  customer: "Customer",
+  admin: "Quản trị viên",
+  risk_manager: "Quản lý Rủi ro",
+  loan_officer: "Chuyên viên Tín dụng",
+  customer: "Khách hàng",
 };
 
 export function AppSidebar() {
@@ -134,15 +134,15 @@ export function AppSidebar() {
             <Landmark className="size-4" />
           </div>
           <div className="flex flex-col leading-none group-data-[collapsible=icon]:hidden">
-            <span className="font-heading text-sm font-semibold">HCXAI Platform</span>
-            <span className="text-xs text-muted-foreground">Loan Approval</span>
+            <span className="font-heading text-sm font-semibold">Hệ thống HCXAI</span>
+            <span className="text-xs text-muted-foreground">Duyệt vay Thông minh</span>
           </div>
         </div>
       </SidebarHeader>
 
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>Workspace</SidebarGroupLabel>
+          <SidebarGroupLabel>Khu vực làm việc</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {visibleItems.map((item) => {
@@ -195,7 +195,7 @@ export function AppSidebar() {
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={handleLogout} variant="destructive">
                 <LogOut className="size-4" />
-                Log out
+                Đăng xuất
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

@@ -32,7 +32,7 @@ apiClient.interceptors.response.use(
 );
 
 /** Extract a human-readable error message from a FastAPI error response. */
-export function getApiErrorMessage(error: unknown, fallback = "Something went wrong. Please try again."): string {
+export function getApiErrorMessage(error: unknown, fallback = "Đã có lỗi xảy ra. Vui lòng thử lại."): string {
   if (axios.isAxiosError(error)) {
     const data = error.response?.data as ApiError | undefined;
     if (typeof data?.detail === "string") return data.detail;

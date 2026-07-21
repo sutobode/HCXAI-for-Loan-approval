@@ -23,7 +23,7 @@ export default function SimilarCasesPage() {
     try {
       const data = await findSimilarCases(values, 8);
       setResult(data);
-      toast.success(`Found ${data.cases.length} similar historical cases`);
+      toast.success(`Đã tìm thấy ${data.cases.length} hồ sơ tương tự trong lịch sử`);
     } catch (error) {
       toast.error(getApiErrorMessage(error));
     } finally {
@@ -34,21 +34,21 @@ export default function SimilarCasesPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Similar Case Explorer"
-        description="Case-based reasoning: find the k nearest historical applications (scikit-learn k-NN) and compare their outcomes."
+        title="Tra cứu Hồ sơ Tương tự"
+        description="Suy luận theo trường hợp: tìm k hồ sơ trong lịch sử gần nhất (k-NN của scikit-learn) và so sánh kết quả của chúng."
       />
 
       <div className="grid gap-6 lg:grid-cols-[1fr_1fr]">
         <Card>
           <CardHeader>
-            <CardTitle>Applicant details</CardTitle>
-            <CardDescription>We&rsquo;ll search the training data for the most similar profiles.</CardDescription>
+            <CardTitle>Thông tin người vay</CardTitle>
+            <CardDescription>Chúng tôi sẽ tìm trong dữ liệu huấn luyện những hồ sơ có đặc điểm tương tự nhất.</CardDescription>
           </CardHeader>
           <CardContent>
             <LoanApplicationForm
               onSubmit={handleSubmit}
               isSubmitting={isLoading}
-              submitLabel={isLoading ? "Searching..." : "Find similar cases"}
+              submitLabel={isLoading ? "Đang tìm kiếm..." : "Tìm hồ sơ tương tự"}
             />
           </CardContent>
         </Card>
@@ -60,40 +60,40 @@ export default function SimilarCasesPage() {
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Users2 className="size-4 text-primary" />
-                    Outcome distribution
+                    Phân phối kết quả
                   </CardTitle>
                   <CardDescription>
-                    Among the {result.cases.length} most similar historical applicants.
+                    Trong số {result.cases.length} hồ sơ tương tự nhất trong lịch sử.
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-3">
                   <div className="flex items-center justify-between text-sm">
-                    <span>Approval rate</span>
+                    <span>Tỷ lệ được duyệt</span>
                     <span className="font-medium">
                       {Math.round((result.outcome_distribution.approval_rate ?? 0) * 100)}%
                     </span>
                   </div>
                   <Progress value={(result.outcome_distribution.approval_rate ?? 0) * 100} />
                   <div className="flex justify-between text-xs text-muted-foreground">
-                    <span>{result.outcome_distribution.approved} approved</span>
-                    <span>{result.outcome_distribution.rejected} rejected</span>
+                    <span>{result.outcome_distribution.approved} được duyệt</span>
+                    <span>{result.outcome_distribution.rejected} bị từ chối</span>
                   </div>
                 </CardContent>
               </Card>
 
               <Card>
                 <CardHeader>
-                  <CardTitle>Nearest neighbors</CardTitle>
+                  <CardTitle>Các hồ sơ gần nhất</CardTitle>
                 </CardHeader>
                 <CardContent className="p-0">
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Loan ID</TableHead>
-                        <TableHead>Similarity</TableHead>
-                        <TableHead>Outcome</TableHead>
+                        <TableHead>Mã hồ sơ</TableHead>
+                        <TableHead>Độ tương tự</TableHead>
+                        <TableHead>Kết quả</TableHead>
                         <TableHead>CIBIL</TableHead>
-                        <TableHead>Income</TableHead>
+                        <TableHead>Thu nhập</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -103,7 +103,7 @@ export default function SimilarCasesPage() {
                           <TableCell>{Math.round(c.similarity_score * 100)}%</TableCell>
                           <TableCell>
                             <Badge variant={c.outcome === "Approved" ? "default" : "destructive"}>
-                              {c.outcome}
+                              {c.outcome === "Approved" ? "Được duyệt" : "Bị từ chối"}
                             </Badge>
                           </TableCell>
                           <TableCell>{c.features.cibil_score}</TableCell>
@@ -118,9 +118,9 @@ export default function SimilarCasesPage() {
           ) : (
             <div className="flex h-full min-h-[300px] flex-col items-center justify-center rounded-xl border border-dashed p-10 text-center">
               <Users2 className="mb-3 size-8 text-muted-foreground" />
-              <p className="font-medium">No search yet</p>
+              <p className="font-medium">Chưa có tìm kiếm nào</p>
               <p className="mt-1 max-w-xs text-sm text-muted-foreground">
-                Submit the form to find similar historical applications.
+                Điền thông tin để tìm các hồ sơ tương tự trong lịch sử.
               </p>
             </div>
           )}

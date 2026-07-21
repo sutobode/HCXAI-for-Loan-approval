@@ -22,8 +22,8 @@ export default function MonitoringPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Model Monitoring Center"
-        description="Training-time performance and live feature drift detection (Kolmogorov–Smirnov test vs. training distribution)."
+        title="Trung tâm Giám sát Mô hình"
+        description="Hiệu suất tại thời điểm huấn luyện và phát hiện lệch dữ liệu trực tiếp (kiểm định Kolmogorov–Smirnov so với phân phối huấn luyện)."
       />
 
       {isLoading ? (
@@ -33,7 +33,7 @@ export default function MonitoringPage() {
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <Card>
               <CardContent className="p-5">
-                <p className="text-sm text-muted-foreground">Model type</p>
+                <p className="text-sm text-muted-foreground">Loại mô hình</p>
                 <p className="mt-1 font-heading text-xl font-semibold">
                   {data.training_metrics?.model_type ?? "—"}
                 </p>
@@ -41,7 +41,7 @@ export default function MonitoringPage() {
             </Card>
             <Card>
               <CardContent className="p-5">
-                <p className="text-sm text-muted-foreground">Accuracy</p>
+                <p className="text-sm text-muted-foreground">Độ chính xác</p>
                 <p className="mt-1 font-heading text-xl font-semibold">
                   {metrics ? `${(metrics.accuracy * 100).toFixed(1)}%` : "—"}
                 </p>
@@ -57,7 +57,7 @@ export default function MonitoringPage() {
             </Card>
             <Card>
               <CardContent className="p-5">
-                <p className="text-sm text-muted-foreground">Predictions served</p>
+                <p className="text-sm text-muted-foreground">Số dự đoán đã xử lý</p>
                 <p className="mt-1 font-heading text-xl font-semibold">{data.n_predictions_served}</p>
               </CardContent>
             </Card>
@@ -67,16 +67,16 @@ export default function MonitoringPage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Cpu className="size-4 text-primary" />
-                Feature drift report
+                Báo cáo lệch dữ liệu đầu vào
               </CardTitle>
               <CardDescription>
-                Comparing recently served applications against the training distribution.
+                So sánh các hồ sơ được xử lý gần đây với phân phối dữ liệu huấn luyện.
               </CardDescription>
             </CardHeader>
             <CardContent>
               {data.drift_report.status === "no_data" ? (
                 <p className="text-sm text-muted-foreground">
-                  Not enough served predictions yet to compute drift.
+                  Chưa có đủ dự đoán để tính toán độ lệch.
                 </p>
               ) : (
                 <>
@@ -91,23 +91,23 @@ export default function MonitoringPage() {
                     )}
                     <AlertTitle>
                       {data.drift_report.overall_drift_detected
-                        ? "Drift detected"
-                        : "No significant drift detected"}
+                        ? "Phát hiện lệch dữ liệu"
+                        : "Không phát hiện lệch dữ liệu đáng kể"}
                     </AlertTitle>
                     <AlertDescription>
                       {data.drift_report.overall_drift_detected
-                        ? `Drifted features: ${data.drift_report.drifted_features?.join(", ")}`
-                        : `Compared ${data.drift_report.n_recent} recent samples against ${data.drift_report.n_reference} training samples.`}
+                        ? `Các yếu tố bị lệch: ${data.drift_report.drifted_features?.join(", ")}`
+                        : `Đã so sánh ${data.drift_report.n_recent} mẫu gần đây với ${data.drift_report.n_reference} mẫu huấn luyện.`}
                     </AlertDescription>
                   </Alert>
 
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Feature</TableHead>
-                        <TableHead>KS statistic</TableHead>
-                        <TableHead>p-value</TableHead>
-                        <TableHead>Status</TableHead>
+                        <TableHead>Yếu tố</TableHead>
+                        <TableHead>Chỉ số KS</TableHead>
+                        <TableHead>Giá trị p</TableHead>
+                        <TableHead>Trạng thái</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -118,7 +118,7 @@ export default function MonitoringPage() {
                           <TableCell>{res.p_value.toFixed(4)}</TableCell>
                           <TableCell>
                             <Badge variant={res.drift_detected ? "destructive" : "default"}>
-                              {res.drift_detected ? "Drift" : "Stable"}
+                              {res.drift_detected ? "Bị lệch" : "Ổn định"}
                             </Badge>
                           </TableCell>
                         </TableRow>
@@ -134,18 +134,18 @@ export default function MonitoringPage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <TrendingUp className="size-4 text-primary" />
-                Prediction drift
+                Lệch phân phối dự đoán
               </CardTitle>
               <CardDescription>
-                Kolmogorov–Smirnov test comparing recent vs. prior predicted-probability distributions
-                (independent of feature drift — the model&rsquo;s outputs can shift even if inputs look stable).
+                Kiểm định Kolmogorov–Smirnov so sánh phân phối xác suất dự đoán gần đây với trước đó
+                (độc lập với lệch dữ liệu đầu vào — đầu ra của mô hình có thể thay đổi dù đầu vào có vẻ ổn định).
               </CardDescription>
             </CardHeader>
             <CardContent>
               {data.prediction_drift.status === "insufficient_data" ? (
                 <p className="text-sm text-muted-foreground">
-                  Not enough prediction snapshots yet ({data.prediction_drift.n_snapshots ?? 0} of{" "}
-                  {data.prediction_drift.required ?? "—"} required).
+                  Chưa đủ dữ liệu dự đoán ({data.prediction_drift.n_snapshots ?? 0} /{" "}
+                  {data.prediction_drift.required ?? "—"} cần thiết).
                 </p>
               ) : (
                 <>
@@ -157,24 +157,24 @@ export default function MonitoringPage() {
                     )}
                     <AlertTitle>
                       {data.prediction_drift.drift_detected
-                        ? "Prediction drift detected"
-                        : "No significant prediction drift"}
+                        ? "Phát hiện lệch phân phối dự đoán"
+                        : "Không phát hiện lệch phân phối dự đoán đáng kể"}
                     </AlertTitle>
                     <AlertDescription>
-                      Recent window mean: {data.prediction_drift.recent_window_mean?.toFixed(3)} · Prior window
-                      mean: {data.prediction_drift.prior_window_mean?.toFixed(3)} (window size:{" "}
+                      Trung bình cửa sổ gần đây: {data.prediction_drift.recent_window_mean?.toFixed(3)} · Trung bình cửa sổ
+                      trước: {data.prediction_drift.prior_window_mean?.toFixed(3)} (kích thước cửa sổ:{" "}
                       {data.prediction_drift.window_size})
                     </AlertDescription>
                   </Alert>
                   <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
                     <div>
-                      <p className="text-xs text-muted-foreground">KS statistic</p>
+                      <p className="text-xs text-muted-foreground">Chỉ số KS</p>
                       <p className="font-heading text-lg font-semibold">
                         {data.prediction_drift.ks_statistic?.toFixed(4)}
                       </p>
                     </div>
                     <div>
-                      <p className="text-xs text-muted-foreground">p-value</p>
+                      <p className="text-xs text-muted-foreground">Giá trị p</p>
                       <p className="font-heading text-lg font-semibold">
                         {data.prediction_drift.p_value?.toFixed(6)}
                       </p>
@@ -188,7 +188,7 @@ export default function MonitoringPage() {
       ) : (
         <div className="flex flex-col items-center gap-2 py-16 text-center text-muted-foreground">
           <Activity className="size-8" />
-          <p>No monitoring data available.</p>
+          <p>Chưa có dữ liệu giám sát.</p>
         </div>
       )}
     </div>

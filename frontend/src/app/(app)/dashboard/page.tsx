@@ -75,39 +75,39 @@ export default function DashboardPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title={`Welcome back${user ? `, ${user.full_name.split(" ")[0]}` : ""}`}
-        description="Overview of recent loan decisions and platform health."
+        title={`Chào mừng trở lại${user ? `, ${user.full_name.split(" ")[0]}` : ""}`}
+        description="Tổng quan các quyết định vay gần đây và tình trạng hoạt động của hệ thống."
         actions={
           <Button nativeButton={false} render={<Link href="/applications/new" />}>
             <FilePlus2 className="size-4" />
-            New application
+            Hồ sơ mới
           </Button>
         }
       />
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
-          title="Recent applications"
+          title="Hồ sơ gần đây"
           value={String(data?.total ?? "—")}
           icon={FileCheck2}
-          hint="Last 8 fetched"
+          hint="8 hồ sơ mới nhất"
         />
         <StatCard
-          title="Approved"
+          title="Được duyệt"
           value={String(approved)}
           icon={TrendingUp}
           tone="success"
-          hint={items.length ? `${Math.round((approved / items.length) * 100)}% of recent` : undefined}
+          hint={items.length ? `${Math.round((approved / items.length) * 100)}% trong số gần đây` : undefined}
         />
         <StatCard
-          title="Rejected"
+          title="Bị từ chối"
           value={String(rejected)}
           icon={ShieldAlert}
           tone="destructive"
-          hint={items.length ? `${Math.round((rejected / items.length) * 100)}% of recent` : undefined}
+          hint={items.length ? `${Math.round((rejected / items.length) * 100)}% trong số gần đây` : undefined}
         />
         <StatCard
-          title="Avg. confidence"
+          title="Độ tin cậy TB"
           value={items.length ? `${Math.round(avgConfidence * 100)}%` : "—"}
           icon={Gauge}
           tone="warning"
@@ -117,11 +117,11 @@ export default function DashboardPage() {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <div>
-            <CardTitle>Recent decisions</CardTitle>
-            <CardDescription>The most recently scored loan applications.</CardDescription>
+            <CardTitle>Quyết định gần đây</CardTitle>
+            <CardDescription>Các hồ sơ vay được chấm điểm gần đây nhất.</CardDescription>
           </div>
           <Button variant="ghost" size="sm" nativeButton={false} render={<Link href="/applications" />}>
-            View all
+            Xem tất cả
             <ArrowRight className="size-4" />
           </Button>
         </CardHeader>
@@ -134,18 +134,18 @@ export default function DashboardPage() {
             </div>
           ) : items.length === 0 ? (
             <p className="py-8 text-center text-sm text-muted-foreground">
-              No applications yet. Submit your first application to get started.
+              Chưa có hồ sơ nào. Hãy nộp hồ sơ đầu tiên để bắt đầu.
             </p>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>ID</TableHead>
-                  <TableHead>Decision</TableHead>
-                  <TableHead>Approval probability</TableHead>
-                  <TableHead>Confidence</TableHead>
-                  <TableHead>Submitted</TableHead>
-                  <TableHead className="text-right">Action</TableHead>
+                  <TableHead>Mã</TableHead>
+                  <TableHead>Quyết định</TableHead>
+                  <TableHead>Xác suất duyệt</TableHead>
+                  <TableHead>Độ tin cậy</TableHead>
+                  <TableHead>Thời gian nộp</TableHead>
+                  <TableHead className="text-right">Hành động</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -154,17 +154,17 @@ export default function DashboardPage() {
                     <TableCell className="font-mono text-xs">#{p.id}</TableCell>
                     <TableCell>
                       <Badge variant={p.prediction === "Approved" ? "default" : "destructive"}>
-                        {p.prediction}
+                        {p.prediction === "Approved" ? "Được duyệt" : "Bị từ chối"}
                       </Badge>
                     </TableCell>
                     <TableCell>{Math.round(p.approval_probability * 100)}%</TableCell>
                     <TableCell>{Math.round(p.confidence * 100)}%</TableCell>
                     <TableCell className="text-xs text-muted-foreground">
-                      {new Date(p.created_at).toLocaleString()}
+                      {new Date(p.created_at).toLocaleString("vi-VN")}
                     </TableCell>
                     <TableCell className="text-right">
                       <Button variant="ghost" size="sm" nativeButton={false} render={<Link href={`/applications/${p.id}`} />}>
-                        View
+                        Xem
                       </Button>
                     </TableCell>
                   </TableRow>

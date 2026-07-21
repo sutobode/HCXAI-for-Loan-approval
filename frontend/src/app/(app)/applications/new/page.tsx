@@ -34,22 +34,22 @@ const TRUST_INTERVENTION_META: Record<
 > = {
   none: null,
   highlight_uncertainty: {
-    label: "Uncertainty highlighted",
+    label: "Đã làm rõ mức độ không chắc chắn",
     description:
-      "Your history shows a tendency to agree with the AI even at moderate confidence — this explanation surfaces the model's limitations more explicitly.",
+      "Lịch sử của bạn cho thấy xu hướng đồng ý với AI ngay cả khi độ tin cậy chỉ ở mức trung bình — giải thích này làm rõ hơn giới hạn của mô hình.",
   },
   highlight_evidence: {
-    label: "Supporting evidence highlighted",
+    label: "Đã bổ sung minh chứng hỗ trợ",
     description:
-      "Your history shows frequent overrides even on high-confidence predictions — this explanation surfaces more supporting evidence to help calibrate trust.",
+      "Lịch sử của bạn cho thấy bạn thường ghi đè quyết định ngay cả khi độ tin cậy cao — giải thích này bổ sung thêm minh chứng để giúp cân chỉnh lại mức độ tin tưởng.",
   },
 };
 
 const ROLE_OPTIONS: { value: ExplainRole; label: string }[] = [
-  { value: "customer", label: "Customer (simple)" },
-  { value: "loan_officer", label: "Loan Officer" },
-  { value: "risk_analyst", label: "Risk Analyst (technical)" },
-  { value: "executive", label: "Executive summary" },
+  { value: "customer", label: "Khách hàng (đơn giản)" },
+  { value: "loan_officer", label: "Chuyên viên Tín dụng" },
+  { value: "risk_analyst", label: "Chuyên viên Rủi ro (kỹ thuật)" },
+  { value: "executive", label: "Tóm tắt cho Lãnh đạo" },
 ];
 
 export default function NewApplicationPage() {
@@ -70,9 +70,9 @@ export default function NewApplicationPage() {
         user_id: user?.email ?? "anonymous",
       });
       setResult(explanation);
-      toast.success("Explanation generated");
+      toast.success("Đã tạo giải thích");
     } catch (error) {
-      toast.error(getApiErrorMessage(error, "Failed to generate explanation"));
+      toast.error(getApiErrorMessage(error, "Không thể tạo giải thích"));
     } finally {
       setIsSubmitting(false);
     }
@@ -89,7 +89,7 @@ export default function NewApplicationPage() {
         trust_rating: 4,
       });
       setFeedbackSent(true);
-      toast.success("Feedback recorded — thanks! This updates your trust calibration.");
+      toast.success("Đã ghi nhận phản hồi — cảm ơn bạn! Điều này giúp cân chỉnh lại mức độ tin tưởng của bạn.");
     } catch (error) {
       toast.error(getApiErrorMessage(error));
     }
@@ -98,19 +98,19 @@ export default function NewApplicationPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Submit Loan Application"
-        description="Run the model, view the SHAP-based explanation, and get a DeepSeek-generated narrative tailored to your role."
+        title="Nộp hồ sơ vay"
+        description="Chạy mô hình, xem giải thích dựa trên SHAP, và nhận diễn giải bằng ngôn ngữ tự nhiên từ DeepSeek phù hợp với vai trò của bạn."
       />
 
       <div className="grid gap-6 lg:grid-cols-[1.1fr_1fr]">
         <Card>
           <CardHeader>
-            <CardTitle>Applicant details</CardTitle>
-            <CardDescription>All fields feed directly into the trained XGBoost model.</CardDescription>
+            <CardTitle>Thông tin người vay</CardTitle>
+            <CardDescription>Mọi trường dữ liệu đều được đưa trực tiếp vào mô hình XGBoost đã huấn luyện.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-center gap-3">
-              <Label className="shrink-0">Explain as</Label>
+              <Label className="shrink-0">Giải thích theo vai trò</Label>
               <Select value={role} onValueChange={(v) => setRole(v as ExplainRole)}>
                 <SelectTrigger className="w-56">
                   <SelectValue />
@@ -128,7 +128,7 @@ export default function NewApplicationPage() {
             <LoanApplicationForm
               onSubmit={handleSubmit}
               isSubmitting={isSubmitting}
-              submitLabel={isSubmitting ? "Scoring application..." : "Get AI decision & explanation"}
+              submitLabel={isSubmitting ? "Đang chấm điểm hồ sơ..." : "Nhận quyết định & giải thích từ AI"}
             />
           </CardContent>
         </Card>
@@ -147,13 +147,13 @@ export default function NewApplicationPage() {
                   <CardHeader className="flex flex-row items-center justify-between">
                     <div>
                       <CardTitle className="flex items-center gap-2">
-                        Decision
+                        Quyết định
                         <Badge variant={result.prediction.prediction === "Approved" ? "default" : "destructive"}>
-                          {result.prediction.prediction}
+                          {result.prediction.prediction === "Approved" ? "Được duyệt" : "Bị từ chối"}
                         </Badge>
                       </CardTitle>
                       <CardDescription>
-                        Confidence: {Math.round(result.prediction.confidence * 100)}% &middot; Prediction #{result.prediction_id}
+                        Độ tin cậy: {Math.round(result.prediction.confidence * 100)}% &middot; Hồ sơ #{result.prediction_id}
                       </CardDescription>
                     </div>
                   </CardHeader>
@@ -166,10 +166,10 @@ export default function NewApplicationPage() {
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <Sparkles className="size-4 text-primary" />
-                      AI narrative ({result.narrative_model})
+                      Diễn giải từ AI ({result.narrative_model})
                     </CardTitle>
                     <CardDescription>
-                      Detail level: <span className="font-medium">{result.progressive.level}</span> (adapted to your interaction history)
+                      Mức độ chi tiết: <span className="font-medium">{result.progressive.level}</span> (đã được điều chỉnh theo lịch sử tương tác của bạn)
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
@@ -181,10 +181,10 @@ export default function NewApplicationPage() {
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2 text-base">
                       <Brain className="size-4 text-primary" />
-                      Explanation Recommendation Engine
+                      Cơ chế Đề xuất Giải thích
                     </CardTitle>
                     <CardDescription>
-                      How this explanation was adapted to you, decided by simple auditable rules (never a black-box model).
+                      Giải thích này được điều chỉnh cho bạn như thế nào, dựa trên các quy tắc đơn giản, minh bạch (không bao giờ là mô hình hộp đen).
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-3">
@@ -203,10 +203,10 @@ export default function NewApplicationPage() {
                     )}
                     <div className="flex flex-wrap gap-2">
                       {result.explanation_strategy.suggest_counterfactual && (
-                        <Badge variant="outline">Suggests: What would change the decision?</Badge>
+                        <Badge variant="outline">Gợi ý: Cần thay đổi gì để đổi kết quả?</Badge>
                       )}
                       {result.explanation_strategy.suggest_similar_cases && (
-                        <Badge variant="outline">Suggests: Similar Case Explorer</Badge>
+                        <Badge variant="outline">Gợi ý: Tra cứu hồ sơ tương tự</Badge>
                       )}
                     </div>
                     <ul className="space-y-1.5 text-sm text-muted-foreground">
@@ -222,8 +222,8 @@ export default function NewApplicationPage() {
 
                 <Card>
                   <CardHeader>
-                    <CardTitle>Feature contributions (SHAP)</CardTitle>
-                    <CardDescription>Positive bars increase approval likelihood, negative bars decrease it.</CardDescription>
+                    <CardTitle>Mức độ ảnh hưởng của từng yếu tố (SHAP)</CardTitle>
+                    <CardDescription>Cột dương làm tăng khả năng được duyệt, cột âm làm giảm khả năng đó.</CardDescription>
                   </CardHeader>
                   <CardContent>
                     <ShapChart contributions={result.contributions} />
@@ -234,10 +234,10 @@ export default function NewApplicationPage() {
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2 text-base">
                       <MessageSquare className="size-4" />
-                      Human Feedback (Feedback Learner)
+                      Phản hồi của con người
                     </CardTitle>
                     <CardDescription>
-                      Your response trains the Trust Calibrator and User Modeler for future explanations.
+                      Phản hồi của bạn giúp huấn luyện cơ chế Cân chỉnh Độ tin cậy và Mô hình hóa Người dùng cho các giải thích sau này.
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="flex gap-3">
@@ -247,7 +247,7 @@ export default function NewApplicationPage() {
                       onClick={() => handleFeedback("approve")}
                     >
                       <ThumbsUp className="size-4" />
-                      Agree with AI
+                      Đồng ý với AI
                     </Button>
                     <Button
                       variant="outline"
@@ -255,7 +255,7 @@ export default function NewApplicationPage() {
                       onClick={() => handleFeedback("override")}
                     >
                       <ThumbsDown className="size-4" />
-                      Override decision
+                      Ghi đè quyết định
                     </Button>
                   </CardContent>
                 </Card>
@@ -268,9 +268,9 @@ export default function NewApplicationPage() {
                 className="flex h-full min-h-[420px] flex-col items-center justify-center rounded-xl border border-dashed p-10 text-center"
               >
                 <Sparkles className="mb-3 size-8 text-muted-foreground" />
-                <p className="font-medium">No decision yet</p>
+                <p className="font-medium">Chưa có quyết định</p>
                 <p className="mt-1 max-w-xs text-sm text-muted-foreground">
-                  Fill in the applicant details and click &ldquo;Get AI decision &amp; explanation&rdquo; to see the model&rsquo;s prediction and reasoning here.
+                  Điền thông tin người vay và nhấn &ldquo;Nhận quyết định &amp; giải thích từ AI&rdquo; để xem dự đoán và lý giải của mô hình tại đây.
                 </p>
               </motion.div>
             )}

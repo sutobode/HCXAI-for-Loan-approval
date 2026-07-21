@@ -25,7 +25,7 @@ export function ShapChart({ contributions, height = 340 }: ShapChartProps) {
       axisPointer: { type: "shadow" },
       formatter: (params: unknown) => {
         const p = (params as { name: string; value: number }[])[0];
-        return `<b>${p.name}</b><br/>SHAP contribution: ${p.value.toFixed(3)}`;
+        return `<b>${p.name}</b><br/>Mức ảnh hưởng SHAP: ${p.value.toFixed(3)}`;
       },
     },
     xAxis: {

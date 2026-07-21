@@ -41,9 +41,9 @@ import { listUsers, registerUser } from "@/lib/endpoints";
 import { getApiErrorMessage } from "@/lib/api";
 
 const registerSchema = z.object({
-  email: z.string().email("Enter a valid email"),
-  full_name: z.string().min(2, "Full name is required"),
-  password: z.string().min(8, "Password must be at least 8 characters"),
+  email: z.string().email("Vui lòng nhập email hợp lệ"),
+  full_name: z.string().min(2, "Vui lòng nhập họ tên"),
+  password: z.string().min(8, "Mật khẩu phải có ít nhất 8 ký tự"),
   role: z.enum(["admin", "risk_manager", "loan_officer", "customer"]),
 });
 
@@ -54,6 +54,13 @@ const ROLE_BADGE_VARIANT: Record<string, "default" | "secondary" | "outline"> = 
   risk_manager: "secondary",
   loan_officer: "outline",
   customer: "outline",
+};
+
+const ROLE_LABELS: Record<string, string> = {
+  admin: "Quản trị viên",
+  risk_manager: "Quản lý Rủi ro",
+  loan_officer: "Chuyên viên Tín dụng",
+  customer: "Khách hàng",
 };
 
 export default function AdminUsersPage() {
@@ -73,7 +80,7 @@ export default function AdminUsersPage() {
   const mutation = useMutation({
     mutationFn: registerUser,
     onSuccess: () => {
-      toast.success("User created");
+      toast.success("Đã tạo người dùng");
       queryClient.invalidateQueries({ queryKey: ["users"] });
       form.reset();
       setOpen(false);
@@ -84,21 +91,21 @@ export default function AdminUsersPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="User Management"
-        description="Create and manage platform accounts. Restricted to administrators (RBAC)."
+        title="Quản lý Người dùng"
+        description="Tạo và quản lý tài khoản trên hệ thống. Chỉ dành cho quản trị viên (theo phân quyền RBAC)."
         actions={
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger
               render={
                 <Button>
                   <UserPlus className="size-4" />
-                  New user
+                  Người dùng mới
                 </Button>
               }
             />
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>Create a new user</DialogTitle>
+                <DialogTitle>Tạo người dùng mới</DialogTitle>
               </DialogHeader>
               <Form {...form}>
                 <form
@@ -110,7 +117,7 @@ export default function AdminUsersPage() {
                     name="full_name"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Full name</FormLabel>
+                        <FormLabel>Họ tên</FormLabel>
                         <FormControl>
                           <Input {...field} />
                         </FormControl>
@@ -136,7 +143,7 @@ export default function AdminUsersPage() {
                     name="password"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Temporary password</FormLabel>
+                        <FormLabel>Mật khẩu tạm thời</FormLabel>
                         <FormControl>
                           <Input type="password" {...field} />
                         </FormControl>
@@ -149,7 +156,7 @@ export default function AdminUsersPage() {
                     name="role"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Role</FormLabel>
+                        <FormLabel>Vai trò</FormLabel>
                         <Select onValueChange={field.onChange} defaultValue={field.value}>
                           <FormControl>
                             <SelectTrigger className="w-full">
@@ -157,10 +164,10 @@ export default function AdminUsersPage() {
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            <SelectItem value="admin">Admin</SelectItem>
-                            <SelectItem value="risk_manager">Risk Manager</SelectItem>
-                            <SelectItem value="loan_officer">Loan Officer</SelectItem>
-                            <SelectItem value="customer">Customer</SelectItem>
+                            <SelectItem value="admin">Quản trị viên</SelectItem>
+                            <SelectItem value="risk_manager">Quản lý Rủi ro</SelectItem>
+                            <SelectItem value="loan_officer">Chuyên viên Tín dụng</SelectItem>
+                            <SelectItem value="customer">Khách hàng</SelectItem>
                           </SelectContent>
                         </Select>
                         <FormMessage />
@@ -168,7 +175,7 @@ export default function AdminUsersPage() {
                     )}
                   />
                   <Button type="submit" disabled={mutation.isPending} className="w-full">
-                    Create user
+                    Tạo người dùng
                   </Button>
                 </form>
               </Form>
@@ -179,8 +186,8 @@ export default function AdminUsersPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>All users</CardTitle>
-          <CardDescription>{users?.length ?? 0} accounts on this platform.</CardDescription>
+          <CardTitle>Toàn bộ người dùng</CardTitle>
+          <CardDescription>{users?.length ?? 0} tài khoản trên hệ thống.</CardDescription>
         </CardHeader>
         <CardContent className="p-0">
           {isLoading ? (
@@ -193,11 +200,11 @@ export default function AdminUsersPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Name</TableHead>
+                  <TableHead>Họ tên</TableHead>
                   <TableHead>Email</TableHead>
-                  <TableHead>Role</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Created</TableHead>
+                  <TableHead>Vai trò</TableHead>
+                  <TableHead>Trạng thái</TableHead>
+                  <TableHead>Ngày tạo</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -207,16 +214,16 @@ export default function AdminUsersPage() {
                     <TableCell className="text-muted-foreground">{u.email}</TableCell>
                     <TableCell>
                       <Badge variant={ROLE_BADGE_VARIANT[u.role]} className="capitalize">
-                        {u.role.replace("_", " ")}
+                        {ROLE_LABELS[u.role] ?? u.role}
                       </Badge>
                     </TableCell>
                     <TableCell>
                       <Badge variant={u.is_active ? "default" : "secondary"}>
-                        {u.is_active ? "Active" : "Inactive"}
+                        {u.is_active ? "Đang hoạt động" : "Ngừng hoạt động"}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-xs text-muted-foreground">
-                      {new Date(u.created_at).toLocaleDateString()}
+                      {new Date(u.created_at).toLocaleDateString("vi-VN")}
                     </TableCell>
                   </TableRow>
                 ))}

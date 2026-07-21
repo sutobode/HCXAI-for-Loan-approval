@@ -15,27 +15,27 @@ import {
 } from "@/components/ui/breadcrumb";
 
 const PAGE_TITLES: Record<string, string> = {
-  "/dashboard": "Dashboard",
-  "/applications": "Loan Queue",
-  "/applications/new": "Submit Application",
-  "/whatif": "What-If Lab",
-  "/similar-cases": "Similar Case Explorer",
-  "/trust": "Trust Dashboard",
-  "/hcxai/explanation-history": "Explanation History",
-  "/hcxai/override-analysis": "Human Override Analysis",
-  "/explainability/global": "Global Explainability",
-  "/fairness": "Fairness & Responsible AI",
-  "/monitoring": "Model Monitoring",
-  "/model-center": "AI Model Center",
-  "/admin/users": "User Management",
-  "/admin/audit": "Audit Trail",
-  "/settings": "Settings",
+  "/dashboard": "Tổng quan",
+  "/applications": "Danh sách hồ sơ vay",
+  "/applications/new": "Nộp hồ sơ vay",
+  "/whatif": "Phòng thí nghiệm Giả định",
+  "/similar-cases": "Tra cứu Hồ sơ Tương tự",
+  "/trust": "Bảng Tin cậy",
+  "/hcxai/explanation-history": "Lịch sử Giải thích",
+  "/hcxai/override-analysis": "Phân tích Ghi đè của Con người",
+  "/explainability/global": "Khả năng Giải thích Toàn cục",
+  "/fairness": "Công bằng & AI Có trách nhiệm",
+  "/monitoring": "Giám sát Mô hình",
+  "/model-center": "Trung tâm Mô hình AI",
+  "/admin/users": "Quản lý Người dùng",
+  "/admin/audit": "Nhật ký Kiểm toán",
+  "/settings": "Cài đặt",
 };
 
 function resolveTitle(pathname: string): string {
   if (PAGE_TITLES[pathname]) return PAGE_TITLES[pathname];
-  if (pathname.startsWith("/applications/")) return "Application Detail";
-  return "HCXAI Platform";
+  if (pathname.startsWith("/applications/")) return "Chi tiết Hồ sơ";
+  return "Hệ thống HCXAI";
 }
 
 export function TopBar() {
@@ -60,7 +60,7 @@ export function TopBar() {
         <Button
           variant="ghost"
           size="icon-sm"
-          aria-label="Toggle theme"
+          aria-label="Chuyển đổi giao diện sáng/tối"
           onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
         >
           <Sun className="size-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />

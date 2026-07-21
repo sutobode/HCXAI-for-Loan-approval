@@ -29,19 +29,19 @@ export default function ExplanationHistoryPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Explanation History"
-        description="Every prediction a user has requested an explanation for or given feedback on, in order."
+        title="Lịch sử Giải thích"
+        description="Toàn bộ hồ sơ mà một người dùng đã yêu cầu giải thích hoặc đã gửi phản hồi, theo thứ tự thời gian."
       />
 
       <Card>
         <CardContent className="flex items-end gap-3 p-4">
           <div className="flex-1">
             <Label htmlFor="history-user" className="mb-1.5">
-              User ID (email)
+              Mã người dùng (email)
             </Label>
             <Input id="history-user" value={userId} onChange={(e) => setUserId(e.target.value)} />
           </div>
-          <Button onClick={() => setQueryUserId(userId)}>Load</Button>
+          <Button onClick={() => setQueryUserId(userId)}>Tải dữ liệu</Button>
         </CardContent>
       </Card>
 
@@ -68,23 +68,23 @@ export default function ExplanationHistoryPage() {
                     <div className="flex items-center gap-2">
                       <span className="font-mono text-xs text-muted-foreground">#{item.id}</span>
                       <Badge variant={item.prediction === "Approved" ? "default" : "destructive"}>
-                        {item.prediction}
+                        {item.prediction === "Approved" ? "Được duyệt" : "Bị từ chối"}
                       </Badge>
-                      <Badge variant="outline">{Math.round(item.confidence * 100)}% confidence</Badge>
+                      <Badge variant="outline">{Math.round(item.confidence * 100)}% độ tin cậy</Badge>
                       <Badge variant="outline" className="font-mono">
-                        model {item.model_version}
+                        mô hình {item.model_version}
                       </Badge>
                     </div>
                     <p className="mt-1.5 truncate text-sm text-muted-foreground">
-                      {item.narrative ?? "No narrative recorded for this prediction."}
+                      {item.narrative ?? "Không có diễn giải nào được lưu cho hồ sơ này."}
                     </p>
                     <p className="mt-1 text-xs text-muted-foreground">
-                      {new Date(item.created_at).toLocaleString()}
+                      {new Date(item.created_at).toLocaleString("vi-VN")}
                       {item.narrative_model ? ` · ${item.narrative_model}` : ""}
                     </p>
                   </div>
                   <Button variant="ghost" size="sm" nativeButton={false} render={<Link href={`/applications/${item.id}`} />}>
-                    View
+                    Xem
                     <ArrowRight className="size-4" />
                   </Button>
                 </CardContent>
@@ -95,7 +95,7 @@ export default function ExplanationHistoryPage() {
       ) : queryUserId ? (
         <div className="flex flex-col items-center gap-2 py-16 text-center text-muted-foreground">
           <History className="size-8" />
-          <p>No explanation history found for &ldquo;{queryUserId}&rdquo;.</p>
+          <p>Không tìm thấy lịch sử giải thích cho &ldquo;{queryUserId}&rdquo;.</p>
         </div>
       ) : null}
     </div>

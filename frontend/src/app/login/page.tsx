@@ -25,8 +25,8 @@ import { getApiErrorMessage } from "@/lib/api";
 import { useAuthStore } from "@/stores/auth-store";
 
 const loginSchema = z.object({
-  email: z.string().min(3, "Email is required"),
-  password: z.string().min(1, "Password is required"),
+  email: z.string().min(3, "Vui lòng nhập email"),
+  password: z.string().min(1, "Vui lòng nhập mật khẩu"),
 });
 
 type LoginFormValues = z.infer<typeof loginSchema>;
@@ -34,18 +34,18 @@ type LoginFormValues = z.infer<typeof loginSchema>;
 const FEATURES = [
   {
     icon: Sparkles,
-    title: "Adaptive Explanations",
-    description: "SHAP-driven insights, narrated by an LLM, tailored to your role.",
+    title: "Giải thích Thích ứng",
+    description: "Thông tin chuyên sâu dựa trên SHAP, được diễn giải bởi LLM, phù hợp với vai trò của bạn.",
   },
   {
     icon: ShieldCheck,
-    title: "Trust Calibration",
-    description: "The platform learns how much your team trusts each decision.",
+    title: "Cân chỉnh Độ tin cậy",
+    description: "Hệ thống học cách đội ngũ của bạn tin tưởng vào từng quyết định như thế nào.",
   },
   {
     icon: Scale,
-    title: "Fairness Monitoring",
-    description: "Continuous demographic parity checks against the four-fifths rule.",
+    title: "Giám sát Công bằng",
+    description: "Kiểm tra liên tục tính công bằng nhân khẩu học theo quy tắc bốn phần năm.",
   },
 ];
 
@@ -64,10 +64,10 @@ export default function LoginPage() {
     try {
       const result = await login(values.email, values.password);
       setAuth(result.access_token, result.user);
-      toast.success(`Welcome back, ${result.user.full_name.split(" ")[0]}`);
+      toast.success(`Chào mừng trở lại, ${result.user.full_name.split(" ")[0]}`);
       router.push("/dashboard");
     } catch (error) {
-      toast.error(getApiErrorMessage(error, "Invalid email or password"));
+      toast.error(getApiErrorMessage(error, "Email hoặc mật khẩu không đúng"));
     } finally {
       setIsSubmitting(false);
     }
@@ -82,7 +82,7 @@ export default function LoginPage() {
           <div className="flex size-9 items-center justify-center rounded-xl bg-white/15">
             <Landmark className="size-5" />
           </div>
-          <span className="font-heading text-lg font-semibold">HCXAI Platform</span>
+          <span className="font-heading text-lg font-semibold">Hệ thống HCXAI</span>
         </div>
 
         <div className="relative z-10 space-y-8">
@@ -92,7 +92,7 @@ export default function LoginPage() {
             transition={{ duration: 0.5 }}
             className="max-w-md font-heading text-3xl font-semibold leading-tight"
           >
-            Human-Centered Explainable AI for Intelligent Loan Approval
+            Trí tuệ Nhân tạo Giải thích được, Lấy Con người làm Trung tâm cho Duyệt vay Thông minh
           </motion.h1>
           <div className="grid gap-5">
             {FEATURES.map((f, i) => (
@@ -116,7 +116,7 @@ export default function LoginPage() {
         </div>
 
         <p className="relative z-10 text-xs text-primary-foreground/60">
-          Enterprise HCXAI reference platform &middot; SHAP + DeepSeek narrative explanations
+          Nền tảng HCXAI cho doanh nghiệp &middot; SHAP + Diễn giải bằng DeepSeek
         </p>
       </div>
 
@@ -130,9 +130,9 @@ export default function LoginPage() {
         >
           <Card className="border-none shadow-none sm:border sm:shadow-sm">
             <CardHeader>
-              <CardTitle className="font-heading text-xl">Sign in</CardTitle>
+              <CardTitle className="font-heading text-xl">Đăng nhập</CardTitle>
               <CardDescription>
-                Use your HCXAI platform credentials to access the dashboard.
+                Sử dụng thông tin tài khoản của bạn để truy cập hệ thống.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -161,7 +161,7 @@ export default function LoginPage() {
                     name="password"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Password</FormLabel>
+                        <FormLabel>Mật khẩu</FormLabel>
                         <FormControl>
                           <Input
                             type="password"
@@ -176,15 +176,15 @@ export default function LoginPage() {
                   />
                   <Button type="submit" className="w-full" disabled={isSubmitting}>
                     {isSubmitting && <Loader2 className="size-4 animate-spin" />}
-                    Sign in
+                    Đăng nhập
                   </Button>
                 </form>
               </Form>
 
               <div className="mt-6 rounded-lg border bg-muted/40 p-3 text-xs text-muted-foreground">
-                <p className="font-medium text-foreground">Default admin account</p>
+                <p className="font-medium text-foreground">Tài khoản quản trị mặc định</p>
                 <p>Email: admin@hcxai.local</p>
-                <p>Password: set via DEFAULT_ADMIN_PASSWORD (see backend README)</p>
+                <p>Mật khẩu: thiết lập qua DEFAULT_ADMIN_PASSWORD (xem README backend)</p>
               </div>
             </CardContent>
           </Card>

@@ -29,9 +29,9 @@ export const loanApplicationSchema = z.object({
   no_of_dependents: z.coerce.number().int().min(0).max(20),
   education: z.enum(["Graduate", "Not Graduate"]),
   self_employed: z.enum(["Yes", "No"]),
-  income_annum: z.coerce.number().positive("Must be greater than 0"),
-  loan_amount: z.coerce.number().positive("Must be greater than 0"),
-  loan_term: z.coerce.number().int().positive("Must be greater than 0"),
+  income_annum: z.coerce.number().positive("Phải lớn hơn 0"),
+  loan_amount: z.coerce.number().positive("Phải lớn hơn 0"),
+  loan_term: z.coerce.number().int().positive("Phải lớn hơn 0"),
   cibil_score: z.coerce.number().int().min(300).max(900),
   residential_assets_value: z.coerce.number().min(0),
   commercial_assets_value: z.coerce.number().min(0),
@@ -63,14 +63,14 @@ interface LoanApplicationFormProps {
   onValuesChange?: (values: LoanApplicationFormValues) => void;
 }
 
-const currencyFormatter = new Intl.NumberFormat("en-IN", {
+const currencyFormatter = new Intl.NumberFormat("vi-VN", {
   maximumFractionDigits: 0,
 });
 
 export function LoanApplicationForm({
   defaultValues = DEFAULT_APPLICATION,
   onSubmit,
-  submitLabel = "Submit",
+  submitLabel = "Gửi",
   isSubmitting = false,
   onValuesChange,
 }: LoanApplicationFormProps) {
@@ -94,7 +94,7 @@ export function LoanApplicationForm({
             name="no_of_dependents"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Dependents</FormLabel>
+                <FormLabel>Số người phụ thuộc</FormLabel>
                 <FormControl>
                   <Input type="number" min={0} max={20} {...field} />
                 </FormControl>
@@ -108,7 +108,7 @@ export function LoanApplicationForm({
             name="education"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Education</FormLabel>
+                <FormLabel>Học vấn</FormLabel>
                 <Select onValueChange={field.onChange} defaultValue={field.value}>
                   <FormControl>
                     <SelectTrigger className="w-full">
@@ -116,8 +116,8 @@ export function LoanApplicationForm({
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    <SelectItem value="Graduate">Graduate</SelectItem>
-                    <SelectItem value="Not Graduate">Not Graduate</SelectItem>
+                    <SelectItem value="Graduate">Đã tốt nghiệp</SelectItem>
+                    <SelectItem value="Not Graduate">Chưa tốt nghiệp</SelectItem>
                   </SelectContent>
                 </Select>
                 <FormMessage />
@@ -130,7 +130,7 @@ export function LoanApplicationForm({
             name="self_employed"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Self-employed</FormLabel>
+                <FormLabel>Tự kinh doanh</FormLabel>
                 <Select onValueChange={field.onChange} defaultValue={field.value}>
                   <FormControl>
                     <SelectTrigger className="w-full">
@@ -138,8 +138,8 @@ export function LoanApplicationForm({
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    <SelectItem value="No">No</SelectItem>
-                    <SelectItem value="Yes">Yes</SelectItem>
+                    <SelectItem value="No">Không</SelectItem>
+                    <SelectItem value="Yes">Có</SelectItem>
                   </SelectContent>
                 </Select>
                 <FormMessage />
@@ -152,7 +152,7 @@ export function LoanApplicationForm({
             name="income_annum"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Annual income</FormLabel>
+                <FormLabel>Thu nhập hàng năm</FormLabel>
                 <FormControl>
                   <Input type="number" step={10000} {...field} />
                 </FormControl>
@@ -169,7 +169,7 @@ export function LoanApplicationForm({
             name="loan_amount"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Loan amount requested</FormLabel>
+                <FormLabel>Số tiền vay đề nghị</FormLabel>
                 <FormControl>
                   <Input type="number" step={10000} {...field} />
                 </FormControl>
@@ -186,7 +186,7 @@ export function LoanApplicationForm({
             name="loan_term"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Loan term (months)</FormLabel>
+                <FormLabel>Thời hạn vay (tháng)</FormLabel>
                 <FormControl>
                   <Input type="number" min={1} max={480} {...field} />
                 </FormControl>
@@ -200,7 +200,7 @@ export function LoanApplicationForm({
             name="residential_assets_value"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Residential assets</FormLabel>
+                <FormLabel>Tài sản bất động sản để ở</FormLabel>
                 <FormControl>
                   <Input type="number" step={10000} {...field} />
                 </FormControl>
@@ -214,7 +214,7 @@ export function LoanApplicationForm({
             name="commercial_assets_value"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Commercial assets</FormLabel>
+                <FormLabel>Tài sản bất động sản thương mại</FormLabel>
                 <FormControl>
                   <Input type="number" step={10000} {...field} />
                 </FormControl>
@@ -228,7 +228,7 @@ export function LoanApplicationForm({
             name="luxury_assets_value"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Luxury assets</FormLabel>
+                <FormLabel>Tài sản cao cấp</FormLabel>
                 <FormControl>
                   <Input type="number" step={10000} {...field} />
                 </FormControl>
@@ -242,7 +242,7 @@ export function LoanApplicationForm({
             name="bank_asset_value"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Bank assets</FormLabel>
+                <FormLabel>Tài sản tại ngân hàng</FormLabel>
                 <FormControl>
                   <Input type="number" step={10000} {...field} />
                 </FormControl>
@@ -258,7 +258,7 @@ export function LoanApplicationForm({
           render={({ field }) => (
             <FormItem>
               <div className="flex items-center justify-between">
-                <FormLabel>Credit score (CIBIL)</FormLabel>
+                <FormLabel>Điểm tín dụng (CIBIL)</FormLabel>
                 <span className="font-mono text-sm font-medium text-primary">{cibilScore}</span>
               </div>
               <FormControl>
@@ -270,7 +270,7 @@ export function LoanApplicationForm({
                   onValueChange={(v) => field.onChange(Array.isArray(v) ? v[0] : v)}
                 />
               </FormControl>
-              <FormDescription>Range: 300 (poor) &ndash; 900 (excellent)</FormDescription>
+              <FormDescription>Phạm vi: 300 (thấp) &ndash; 900 (rất tốt)</FormDescription>
               <FormMessage />
             </FormItem>
           )}
