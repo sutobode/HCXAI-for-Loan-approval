@@ -1349,3 +1349,137 @@ Time t=1: User chấm hồ sơ thứ 9
 - **Deployment-ready** (không phải chỉ paper + notebook)
 
 ---
+
+## 5. Research Contribution (Novelty)
+
+### 5.1 Core Contribution
+
+**Closed-loop Human-Centered Explainable AI với Trust Intervention**
+
+#### Các hệ thống XAI truyền thống (state-of-the-art 2020-2023):
+```
+AI Model → Explanation → Human
+          (one-way)
+```
+
+#### Hệ thống này:
+```
+AI Model → Explanation ←─────────┐
+    │          │                  │
+    │          ▼                  │
+    │       Human ────→ Feedback ─┤
+    │                             │
+    │     ┌───────────────────────┘
+    │     │
+    │     ▼
+    │  Trust Calibrator (detect over/under-trust)
+    │     │
+    │     ▼
+    │  Recommendation Engine (strategy + trust_intervention)
+    │     │
+    │     ▼
+    └──→ Narrative Generation (CONTENT thay đổi theo intervention)
+```
+
+**Key differences**:
+1. **Not just logging feedback** (open-loop) — Many systems log but don't adapt
+2. **Not just changing UI layout** (superficial adaptation) — Some systems highlight/hide sections
+3. **Changes narrative CONTENT** (deep adaptation) — LLM prompt includes trust_intervention → generated text actually different
+
+### 5.2 Specific Novel Components
+
+#### 5.2.1 Trust Intervention Typology
+
+**3 strategies** (không có trong literature trước):
+
+| Strategy | When | How |
+|----------|------|-----|
+| `highlight_uncertainty` | User over-trusts | Add model limitations warning to narrative |
+| `highlight_evidence` | User under-trusts | Add supporting statistics/evidence to narrative |
+| `null` (default) | Well-calibrated | No intervention |
+
+**Implementation**: DeepSeek prompt modification → narrative content changes
+
+#### 5.2.2 Cognitive Load Adaptation with Expertise Multiplier
+
+**Formula**:
+```
+perceived_load = raw_load × (1.5 - expertise_level)
+```
+
+**Insight**: Novice users experience HIGHER cognitive load than experts for same complexity.
+
+**Action**: If `perceived_load > 0.7` AND `preferred_detail_level = technical` → **downgrade** to `detailed`.
+
+**Comparison**: Chromik et al. (2021) adapt by static complexity categories; ours adapts by user-specific load estimation.
+
+#### 5.2.3 Auditable HCXAI Logic
+
+**Design principle**: "An HCXAI platform whose own adaptation logic cannot itself be explained would undermine its purpose."
+
+**Implementation**:
+- ❌ **NOT** meta-model (neural network learns adaptation policy from data)
+- ✅ **IF/ELSE heuristic rules** (human-readable, auditable)
+- ✅ **Rationale generation** (system explains WHY it chose this strategy)
+
+**Example rationale**:
+```json
+[
+  "Using learned preference for user 'admin@hcxai.local': detailed",
+  "Confidence below 75%: recommending Similar Case Explorer",
+  "User shows over-trust pattern: will surface model uncertainty/limitations"
+]
+```
+
+→ Compliance officer hoặc auditor có thể trace logic chain.
+
+#### 5.2.4 Multi-method XAI Integration
+
+**7 methods trong 1 platform** (ít hệ thống có đầy đủ):
+
+1. SHAP (local, exact)
+2. LIME (local, cross-check)
+3. Counterfactual (contrastive)
+4. Global SHAP (population-level)
+5. Explanation Quality (stability/completeness/sparsity)
+6. Similar Cases (example-based)
+7. What-If Lab (interactive)
+
+**Synergy**: Recommendation Engine có thể suggest method phù hợp (ví dụ: confidence thấp → suggest similar cases).
+
+---
+
+### 5.3 Research Questions Answered
+
+#### RQ1: Can trust calibration improve human-AI collaboration quality?
+**Answer**: Yes — system detects over/under-trust and intervenes.
+**Evidence**: Trust Dashboard visualizes trust_state, Override Analysis shows disagreement patterns.
+
+#### RQ2: Does adaptive explanation improve user satisfaction?
+**Answer**: Measurable via Explanation Satisfaction Score (tracked in feedback table).
+**Evidence**: `trust_rating` (1-5 stars) per feedback event.
+
+#### RQ3: Can closed-loop adaptation be auditable?
+**Answer**: Yes — IF/ELSE rules + rationale generation.
+**Evidence**: Every strategy decision has human-readable rationale.
+
+#### RQ4: Is self-implementation of XAI methods feasible and beneficial?
+**Answer**: Yes for LIME + Counterfactual.
+**Benefits**: 
+- No dependency conflicts
+- Full control over algorithm
+- Educational (code = documentation)
+**Cost**: ~600 lines code vs using packages
+
+---
+
+### 5.4 Contribution Statement (for paper abstract)
+
+> We present a closed-loop Human-Centered Explainable AI (HCXAI) platform for loan approval that:
+> 1. Integrates 7 XAI methods (SHAP, LIME, Counterfactual, Global, Quality, Similar Cases, What-If)
+> 2. Detects user trust patterns (over-trust, under-trust) via Trust Calibrator
+> 3. Adaptively modifies explanation narrative content (not just UI) via Trust Intervention
+> 4. Uses auditable heuristic rules (not black-box meta-models) for transparency
+> 5. Demonstrates full-stack implementation (FastAPI + Next.js) beyond research prototype
+
+---
