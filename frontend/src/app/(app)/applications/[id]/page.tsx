@@ -97,7 +97,19 @@ export default function ApplicationDetailPage() {
     <div className="space-y-6">
       <PageHeader
         title={`Hồ sơ #${data.id}${data.applicant_name ? ` — ${data.applicant_name}` : ""}`}
-        description={`Nộp lúc ${new Date(data.created_at).toLocaleString("vi-VN")}`}
+        description={
+          <div className="flex items-center gap-3 text-sm text-muted-foreground">
+            <span>Nộp lúc {new Date(data.created_at).toLocaleString("vi-VN")}</span>
+            {data.model_version && (
+              <>
+                <span>•</span>
+                <Badge variant="outline" className="font-mono text-xs">
+                  Model {data.model_version}
+                </Badge>
+              </>
+            )}
+          </div>
+        }
         actions={
           <Button variant="outline" onClick={() => router.push("/applications")}>
             <ArrowLeft className="size-4" />

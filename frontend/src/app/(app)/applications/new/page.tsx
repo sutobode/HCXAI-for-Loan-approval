@@ -227,6 +227,14 @@ export default function NewApplicationPage() {
                       </CardTitle>
                       <CardDescription>
                         Độ tin cậy: {Math.round(result.prediction.confidence * 100)}% &middot; Hồ sơ #{result.prediction_id}
+                        {result.model_version && (
+                          <>
+                            {" "}&middot;{" "}
+                            <Badge variant="outline" className="font-mono text-xs">
+                              Model {result.model_version}
+                            </Badge>
+                          </>
+                        )}
                       </CardDescription>
                       <p className="mt-1 text-xs text-muted-foreground">
                         {result.prediction.confidence >= 0.9
