@@ -79,6 +79,17 @@ export default function FairnessPage() {
         </div>
       ) : data ? (
         <>
+          <Card>
+            <CardContent className="p-4 text-sm text-muted-foreground">
+              <p className="font-medium text-foreground">Four-Fifths Rule (Quy tắc 80%) là gì?</p>
+              <p className="mt-1">
+                Đây là tiêu chuẩn pháp lý trong cho vay công bằng: tỷ lệ duyệt vay của nhóm bất lợi nhất
+                phải đạt ít nhất 80% so với nhóm được duyệt nhiều nhất. Ví dụ: nếu nhóm A được duyệt 80%,
+                thì nhóm B phải được duyệt ít nhất 64% (= 80% × 80%). Nếu thấp hơn → có dấu hiệu thiên vị cần xem xét.
+              </p>
+            </CardContent>
+          </Card>
+
           <Alert variant={data.compliance_summary.overall_compliant ? "default" : "destructive"}>
             {data.compliance_summary.overall_compliant ? (
               <CheckCircle2 className="size-4" />

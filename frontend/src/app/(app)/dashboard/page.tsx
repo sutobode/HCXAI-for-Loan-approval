@@ -21,7 +21,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { listPredictions } from "@/lib/endpoints";
+import { listApplicants, listPredictions } from "@/lib/endpoints";
 import { useAuthStore } from "@/stores/auth-store";
 
 function StatCard({
@@ -68,6 +68,12 @@ export default function DashboardPage() {
     queryFn: () => listPredictions(8, 0),
   });
 
+  // Fetch applicant stats for dashboard pending count
+  const { data: applicantsData } = useQuery({
+    queryKey: ["applicants", "dashboard-stats"],
+    queryFn: () => listApplicants(1, 0),
+  });
+
   const items = data?.items ?? [];
   const approved = items.filter((p) => p.prediction === "Approved").length;
   const rejected = items.length - approved;
@@ -75,6 +81,14 @@ export default function DashboardPage() {
     items.length > 0
       ? items.reduce((sum, p) => sum + p.confidence, 0) / items.length
       : 0;
+
+  // Count pending: total applicants minus those who have been scored
+  const totalApplicants = applicantsData?.total ?? 0;
+  const pendingCount = applicantsData
+    ? applicantsData.items.length > 0
+      ? applicantsData.total - (data?.total ?? 0)
+      : 0
+    : 0;
 
   return (
     <div className="space-y-6">
@@ -94,27 +108,28 @@ export default function DashboardPage() {
           title="Hồ sơ gần đây"
           value={String(data?.total ?? "—")}
           icon={FileCheck2}
-          hint="8 hồ sơ mới nhất"
+          hint="Tổng số hồ sơ đã được AI chấm điểm trong hệ thống"
         />
         <StatCard
           title="Được duyệt"
           value={String(approved)}
           icon={TrendingUp}
           tone="success"
-          hint={items.length ? `${Math.round((approved / items.length) * 100)}% trong số gần đây` : undefined}
+          hint={items.length ? `${Math.round((approved / items.length) * 100)}% trong 8 hồ sơ gần nhất` : "AI đánh giá đủ điều kiện vay"}
         />
         <StatCard
           title="Bị từ chối"
           value={String(rejected)}
           icon={ShieldAlert}
           tone="destructive"
-          hint={items.length ? `${Math.round((rejected / items.length) * 100)}% trong số gần đây` : undefined}
+          hint={items.length ? `${Math.round((rejected / items.length) * 100)}% trong 8 hồ sơ gần nhất` : "AI đánh giá rủi ro quá cao"}
         />
         <StatCard
           title="Độ tin cậy TB"
           value={items.length ? `${Math.round(avgConfidence * 100)}%` : "—"}
           icon={Gauge}
           tone="warning"
+          hint="Mô hình chắc chắn bao nhiêu % về quyết định của mình"
         />
       </div>
 
@@ -126,7 +141,14 @@ export default function DashboardPage() {
               <UserSearch className="size-6 text-primary" />
             </div>
             <div className="min-w-0 flex-1">
-              <p className="font-medium">Loan Queue — Khách hàng</p>
+              <p className="font-medium">
+                Khách hàng
+                {pendingCount > 0 && (
+                  <Badge variant="default" className="ml-2 text-xs">
+                    {pendingCount} chờ chấm
+                  </Badge>
+                )}
+              </p>
               <p className="mt-0.5 text-sm text-muted-foreground">
                 Chọn khách hàng, bấm chấm điểm. Không cần nhập tay.
               </p>
@@ -199,6 +221,7 @@ export default function DashboardPage() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Mã</TableHead>
+                  <TableHead>Khách hàng</TableHead>
                   <TableHead>Quyết định</TableHead>
                   <TableHead>Xác suất duyệt</TableHead>
                   <TableHead>Độ tin cậy</TableHead>
@@ -210,6 +233,9 @@ export default function DashboardPage() {
                 {items.map((p) => (
                   <TableRow key={p.id}>
                     <TableCell className="font-mono text-xs">#{p.id}</TableCell>
+                    <TableCell className="max-w-[140px] truncate text-sm">
+                      {p.applicant_name ?? <span className="text-muted-foreground">—</span>}
+                    </TableCell>
                     <TableCell>
                       <Badge variant={p.prediction === "Approved" ? "default" : "destructive"}>
                         {p.prediction === "Approved" ? "Được duyệt" : "Bị từ chối"}

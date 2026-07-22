@@ -320,7 +320,14 @@ def explain(
     prediction = explainer.predict(features_df)
     shap_result = explainer.explain(features_df)
 
-    narrative_result = generate_narrative_explanation(prediction, shap_result, role=request.role)
+    # HCXAI: compute strategy FIRST so trust_intervention can influence narrative content
+    strategy = hcxai.recommend_explanation_strategy(
+        request.user_id, prediction, shap_result, detail_override=request.detail_level
+    )
+
+    narrative_result = generate_narrative_explanation(
+        prediction, shap_result, role=request.role, trust_intervention=strategy.trust_intervention
+    )
 
     application_id, prediction_id = hcxai.record_prediction_and_context(
         request.application.model_dump(),
@@ -339,9 +346,6 @@ def explain(
         details={"role": request.role, "model_version": explainer.version_label},
     )
 
-    strategy = hcxai.recommend_explanation_strategy(
-        request.user_id, prediction, shap_result, detail_override=request.detail_level
-    )
     progressive = hcxai.build_progressive_explanation(
         prediction, shap_result, narrative_result["narrative"], strategy.detail_level
     )

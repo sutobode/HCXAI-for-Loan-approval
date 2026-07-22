@@ -54,48 +54,68 @@ interface NavItem {
   roles?: UserRole[];
 }
 
-const NAV_ITEMS: NavItem[] = [
-  { title: "Tổng quan", href: "/dashboard", icon: LayoutDashboard },
-  { title: "Khách hàng", href: "/applicants", icon: UserSearch },
-  { title: "Danh sách hồ sơ vay", href: "/applications", icon: ListChecks },
-  { title: "Nộp hồ sơ vay", href: "/applications/new", icon: FilePlus2 },
-  { title: "Phòng thí nghiệm Giả định", href: "/whatif", icon: FlaskConical },
-  { title: "Hồ sơ tương tự", href: "/similar-cases", icon: Users2 },
-  { title: "Bảng Tin cậy", href: "/trust", icon: ShieldCheck },
-  { title: "Lịch sử Giải thích", href: "/hcxai/explanation-history", icon: History },
+interface NavGroup {
+  label: string;
+  items: NavItem[];
+}
+
+const NAV_GROUPS: NavGroup[] = [
   {
-    title: "Phân tích Ghi đè",
-    href: "/hcxai/override-analysis",
-    icon: GitCompareArrows,
-    roles: ["admin", "risk_manager"],
+    label: "Nghiệp vụ",
+    items: [
+      { title: "Tổng quan", href: "/dashboard", icon: LayoutDashboard },
+      { title: "Khách hàng", href: "/applicants", icon: UserSearch },
+      { title: "Hồ sơ đã chấm", href: "/applications", icon: ListChecks },
+      { title: "Chấm điểm mới", href: "/applications/new", icon: FilePlus2 },
+      { title: "Giả định (What-If)", href: "/whatif", icon: FlaskConical },
+      { title: "Hồ sơ tương tự", href: "/similar-cases", icon: Users2 },
+    ],
   },
   {
-    title: "Global Explainability",
-    href: "/explainability/global",
-    icon: Layers,
-    roles: ["admin", "risk_manager", "loan_officer"],
+    label: "Phân tích AI",
+    items: [
+      { title: "Bảng Tin cậy", href: "/trust", icon: ShieldCheck },
+      { title: "Lịch sử Giải thích", href: "/hcxai/explanation-history", icon: History },
+      {
+        title: "Phân tích Ghi đè",
+        href: "/hcxai/override-analysis",
+        icon: GitCompareArrows,
+        roles: ["admin", "risk_manager"],
+      },
+      {
+        title: "Giải thích Toàn cục",
+        href: "/explainability/global",
+        icon: Layers,
+        roles: ["admin", "risk_manager", "loan_officer"],
+      },
+      {
+        title: "Công bằng AI",
+        href: "/fairness",
+        icon: ShieldHalf,
+        roles: ["admin", "risk_manager"],
+      },
+      {
+        title: "Giám sát Mô hình",
+        href: "/monitoring",
+        icon: ActivitySquare,
+        roles: ["admin", "risk_manager"],
+      },
+      {
+        title: "Trung tâm Mô hình",
+        href: "/model-center",
+        icon: Cpu,
+        roles: ["admin", "risk_manager"],
+      },
+    ],
   },
   {
-    title: "Báo cáo Công bằng",
-    href: "/fairness",
-    icon: ShieldHalf,
-    roles: ["admin", "risk_manager"],
+    label: "Quản trị",
+    items: [
+      { title: "Người dùng", href: "/admin/users", icon: Users2, roles: ["admin"] },
+      { title: "Nhật ký Kiểm toán", href: "/admin/audit", icon: ScrollText, roles: ["admin"] },
+      { title: "Cài đặt", href: "/settings", icon: Settings },
+    ],
   },
-  {
-    title: "Giám sát Mô hình",
-    href: "/monitoring",
-    icon: ActivitySquare,
-    roles: ["admin", "risk_manager"],
-  },
-  {
-    title: "Trung tâm Mô hình AI",
-    href: "/model-center",
-    icon: Cpu,
-    roles: ["admin", "risk_manager"],
-  },
-  { title: "Quản trị · Người dùng", href: "/admin/users", icon: Users2, roles: ["admin"] },
-  { title: "Quản trị · Nhật ký Kiểm toán", href: "/admin/audit", icon: ScrollText, roles: ["admin"] },
-  { title: "Cài đặt", href: "/settings", icon: Settings },
 ];
 
 function initialsFromName(name: string) {
@@ -119,10 +139,6 @@ export function AppSidebar() {
   const router = useRouter();
   const { user, clearAuth } = useAuthStore();
 
-  const visibleItems = NAV_ITEMS.filter(
-    (item) => !item.roles || (user && item.roles.includes(user.role))
-  );
-
   function handleLogout() {
     clearAuth();
     router.push("/login");
@@ -143,30 +159,38 @@ export function AppSidebar() {
       </SidebarHeader>
 
       <SidebarContent>
-        <SidebarGroup>
-          <SidebarGroupLabel>Khu vực làm việc</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {visibleItems.map((item) => {
-                const isActive =
-                  pathname === item.href ||
-                  (item.href !== "/dashboard" && pathname.startsWith(item.href) && item.href !== "/applications/new");
-                return (
-                  <SidebarMenuItem key={item.href}>
-                    <SidebarMenuButton
-                      isActive={isActive}
-                      tooltip={item.title}
-                      render={<Link href={item.href} />}
-                    >
-                      <item.icon className="size-4" />
-                      <span>{item.title}</span>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                );
-              })}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+        {NAV_GROUPS.map((group) => {
+          const visibleItems = group.items.filter(
+            (item) => !item.roles || (user && item.roles.includes(user.role))
+          );
+          if (visibleItems.length === 0) return null;
+          return (
+            <SidebarGroup key={group.label}>
+              <SidebarGroupLabel>{group.label}</SidebarGroupLabel>
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  {visibleItems.map((item) => {
+                    const isActive =
+                      pathname === item.href ||
+                      (item.href !== "/dashboard" && pathname.startsWith(item.href) && item.href !== "/applications/new");
+                    return (
+                      <SidebarMenuItem key={item.href}>
+                        <SidebarMenuButton
+                          isActive={isActive}
+                          tooltip={item.title}
+                          render={<Link href={item.href} />}
+                        >
+                          <item.icon className="size-4" />
+                          <span>{item.title}</span>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                    );
+                  })}
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+          );
+        })}
       </SidebarContent>
 
       <SidebarFooter>

@@ -1,9 +1,10 @@
 "use client";
 
+import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { ArrowLeft, MessageSquare, Scale, GitBranch, Gauge } from "lucide-react";
+import { ArrowLeft, MessageSquare, Scale, GitBranch, Gauge, ThumbsUp, ThumbsDown, Star } from "lucide-react";
 
 import { PageHeader } from "@/components/layout/page-header";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,6 +13,8 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { GlossaryTerm } from "@/components/ui/glossary-term";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { RiskGauge } from "@/components/charts/risk-gauge";
 import { ShapChart } from "@/components/charts/shap-chart";
 import {
@@ -20,14 +23,21 @@ import {
   getDecisionProvenance,
   getExplanationQuality,
   getPredictionDetail,
+  submitFeedback,
 } from "@/lib/endpoints";
 import { getApiErrorMessage } from "@/lib/api";
+import { useAuthStore } from "@/stores/auth-store";
 import type { LoanApplication } from "@/lib/types";
 
 export default function ApplicationDetailPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
+  const queryClient = useQueryClient();
+  const user = useAuthStore((s) => s.user);
   const id = Number(params.id);
+
+  const [feedbackComment, setFeedbackComment] = useState("");
+  const [trustRating, setTrustRating] = useState(0);
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ["prediction", id],
@@ -86,7 +96,7 @@ export default function ApplicationDetailPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title={`Hồ sơ #${data.id}`}
+        title={`Hồ sơ #${data.id}${data.applicant_name ? ` — ${data.applicant_name}` : ""}`}
         description={`Nộp lúc ${new Date(data.created_at).toLocaleString("vi-VN")}`}
         actions={
           <Button variant="outline" onClick={() => router.push("/applications")}>
@@ -109,7 +119,11 @@ export default function ApplicationDetailPage() {
               Độ tin cậy: {Math.round(data.confidence * 100)}%
             </CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-3">
+            <p className="text-xs text-muted-foreground">
+              Đồng hồ đo rủi ro bên dưới cho thấy mức độ rủi ro tổng thể của hồ sơ này theo đánh giá của AI.
+              Kim càng nghiêng về phía đỏ = rủi ro càng cao, xanh = an toàn.
+            </p>
             <RiskGauge riskScore={data.risk_score} />
           </CardContent>
         </Card>
@@ -133,7 +147,12 @@ export default function ApplicationDetailPage() {
           </CardTitle>
           <CardDescription>Giá trị cơ sở: {data.shap_result.base_value.toFixed(3)}</CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-3">
+          <p className="text-xs text-muted-foreground">
+            Biểu đồ bên dưới cho thấy từng yếu tố tài chính đóng góp bao nhiêu vào quyết định.
+            Cột hướng phải (dương) = tăng khả năng duyệt, cột hướng trái (âm) = giảm khả năng duyệt.
+            Yếu tố nào cột càng dài thì ảnh hưởng càng lớn.
+          </p>
           <ShapChart contributions={data.shap_result.contributions} />
         </CardContent>
       </Card>
@@ -284,6 +303,105 @@ export default function ApplicationDetailPage() {
           </div>
         </CollapsibleContent>
       </Collapsible>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <ThumbsUp className="size-4 text-primary" />
+            Phê duyệt hồ sơ
+          </CardTitle>
+          <CardDescription>
+            Xem xét kết quả AI ở trên, sau đó đưa ra quyết định cuối cùng. Phản hồi của bạn sẽ được ghi nhận vào hệ thống HCXAI.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {/* Trust rating */}
+          <div className="space-y-2">
+            <Label className="text-sm">Mức độ tin tưởng vào quyết định AI (1–5)</Label>
+            <div className="flex gap-1">
+              {[1, 2, 3, 4, 5].map((n) => (
+                <button
+                  key={n}
+                  type="button"
+                  onClick={() => setTrustRating(n)}
+                  className={`flex size-9 items-center justify-center rounded-lg border transition-colors ${
+                    trustRating >= n
+                      ? "border-primary bg-primary/10 text-primary"
+                      : "border-muted text-muted-foreground hover:border-primary/50"
+                  }`}
+                >
+                  <Star className={`size-4 ${trustRating >= n ? "fill-primary" : ""}`} />
+                </button>
+              ))}
+              <span className="ml-2 self-center text-xs text-muted-foreground">
+                {trustRating === 0 ? "Chưa đánh giá" : `${trustRating}/5`}
+              </span>
+            </div>
+          </div>
+
+          {/* Comment */}
+          <div className="space-y-2">
+            <Label className="text-sm">Ghi chú (tuỳ chọn)</Label>
+            <Input
+              placeholder="Lý do đồng ý hoặc ghi đè..."
+              value={feedbackComment}
+              onChange={(e) => setFeedbackComment(e.target.value)}
+            />
+          </div>
+
+          {/* Action buttons */}
+          <div className="flex gap-3 pt-1">
+            <Button
+              onClick={async () => {
+                try {
+                  await submitFeedback({
+                    prediction_id: id,
+                    user_id: user?.email ?? "anonymous",
+                    action: "approve",
+                    human_decision: data.prediction === "Approved" ? "Approved" : "Rejected",
+                    trust_rating: trustRating || undefined,
+                    comment: feedbackComment || undefined,
+                  });
+                  toast.success("Đã xác nhận đồng ý với quyết định AI");
+                  queryClient.invalidateQueries({ queryKey: ["prediction", id] });
+                  setFeedbackComment("");
+                  setTrustRating(0);
+                } catch (error) {
+                  toast.error(getApiErrorMessage(error, "Gửi phản hồi thất bại"));
+                }
+              }}
+            >
+              <ThumbsUp className="size-4" />
+              Đồng ý với AI
+            </Button>
+            <Button
+              variant="outline"
+              onClick={async () => {
+                const overriddenDecision = data.prediction === "Approved" ? "Rejected" : "Approved";
+                try {
+                  await submitFeedback({
+                    prediction_id: id,
+                    user_id: user?.email ?? "anonymous",
+                    action: "override",
+                    human_decision: overriddenDecision,
+                    trust_rating: trustRating || undefined,
+                    comment: feedbackComment || undefined,
+                  });
+                  toast.success(`Đã ghi đè: quyết định cuối là "${overriddenDecision === "Approved" ? "Duyệt" : "Từ chối"}"`);
+                  queryClient.invalidateQueries({ queryKey: ["prediction", id] });
+                  setFeedbackComment("");
+                  setTrustRating(0);
+                } catch (error) {
+                  toast.error(getApiErrorMessage(error, "Gửi phản hồi thất bại"));
+                }
+              }}
+            >
+              <ThumbsDown className="size-4" />
+              Ghi đè quyết định
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>

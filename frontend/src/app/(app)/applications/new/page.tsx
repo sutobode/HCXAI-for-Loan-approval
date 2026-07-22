@@ -1,10 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sparkles, ThumbsDown, ThumbsUp, MessageSquare } from "lucide-react";
+import { Sparkles, ThumbsDown, ThumbsUp, MessageSquare, UserSearch } from "lucide-react";
 
 import { Brain, Lightbulb } from "lucide-react";
 
@@ -55,12 +55,22 @@ const ROLE_OPTIONS: { value: ExplainRole; label: string }[] = [
   { value: "executive", label: "Tóm tắt cho Lãnh đạo" },
 ];
 
+const USER_ROLE_TO_EXPLAIN_ROLE: Record<string, ExplainRole> = {
+  admin: "risk_analyst",
+  risk_manager: "risk_analyst",
+  loan_officer: "loan_officer",
+  customer: "customer",
+};
+
 export default function NewApplicationPage() {
   const user = useAuthStore((s) => s.user);
+  const router = useRouter();
   const searchParams = useSearchParams();
   const applicantIdParam = searchParams.get("applicant_id");
 
-  const [role, setRole] = useState<ExplainRole>("loan_officer");
+  const [role, setRole] = useState<ExplainRole>(
+    USER_ROLE_TO_EXPLAIN_ROLE[user?.role ?? "loan_officer"] ?? "loan_officer"
+  );
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [result, setResult] = useState<HCXAIExplanationResult | null>(null);
   const [feedbackSent, setFeedbackSent] = useState(false);
@@ -160,21 +170,30 @@ export default function NewApplicationPage() {
             <CardDescription>Mọi trường dữ liệu đều được đưa trực tiếp vào mô hình XGBoost đã huấn luyện.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="flex items-center gap-3">
-              <Label className="shrink-0">Giải thích theo vai trò</Label>
-              <Select value={role} onValueChange={(v) => setRole(v as ExplainRole)}>
-                <SelectTrigger className="w-56">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {ROLE_OPTIONS.map((o) => (
-                    <SelectItem key={o.value} value={o.value}>
-                      {o.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            <Collapsible className="rounded-lg border">
+              <CollapsibleTrigger className="px-3 py-2">
+                <span className="text-xs text-muted-foreground">
+                  Tuỳ chọn nâng cao · Vai trò giải thích: {ROLE_OPTIONS.find((o) => o.value === role)?.label}
+                </span>
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <div className="flex items-center gap-3 border-t px-3 py-3">
+                  <Label className="shrink-0 text-sm">Giải thích theo vai trò</Label>
+                  <Select value={role} onValueChange={(v) => setRole(v as ExplainRole)}>
+                    <SelectTrigger className="w-56">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {ROLE_OPTIONS.map((o) => (
+                        <SelectItem key={o.value} value={o.value}>
+                          {o.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
             <Separator />
             <LoanApplicationForm
               key={prefillValues ? "prefilled" : "default"}
@@ -209,6 +228,13 @@ export default function NewApplicationPage() {
                       <CardDescription>
                         Độ tin cậy: {Math.round(result.prediction.confidence * 100)}% &middot; Hồ sơ #{result.prediction_id}
                       </CardDescription>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        {result.prediction.confidence >= 0.9
+                          ? "Mô hình rất chắc chắn về kết quả này — các yếu tố tài chính chỉ rõ một chiều."
+                          : result.prediction.confidence >= 0.7
+                            ? "Mô hình khá chắc chắn, nhưng có một số yếu tố kéo ngược — nên xem xét kỹ giải thích SHAP bên dưới."
+                            : "Mô hình không chắc chắn lắm — hồ sơ nằm gần ranh giới quyết định. Khuyến nghị xem Counterfactual hoặc hồ sơ tương tự để đối chiếu."}
+                      </p>
                     </div>
                   </CardHeader>
                   <CardContent>
@@ -313,23 +339,53 @@ export default function NewApplicationPage() {
                       <GlossaryTerm term="User Modeler" /> cho các giải thích sau này.
                     </CardDescription>
                   </CardHeader>
-                  <CardContent className="flex gap-3">
-                    <Button
-                      variant="outline"
-                      disabled={feedbackSent}
-                      onClick={() => handleFeedback("approve")}
-                    >
-                      <ThumbsUp className="size-4" />
-                      Đồng ý với AI
-                    </Button>
-                    <Button
-                      variant="outline"
-                      disabled={feedbackSent}
-                      onClick={() => handleFeedback("override")}
-                    >
-                      <ThumbsDown className="size-4" />
-                      Ghi đè quyết định
-                    </Button>
+                  <CardContent>
+                    {!feedbackSent ? (
+                      <div className="flex gap-3">
+                        <Button
+                          variant="outline"
+                          onClick={() => handleFeedback("approve")}
+                        >
+                          <ThumbsUp className="size-4" />
+                          Đồng ý với AI
+                        </Button>
+                        <Button
+                          variant="outline"
+                          onClick={() => handleFeedback("override")}
+                        >
+                          <ThumbsDown className="size-4" />
+                          Ghi đè quyết định
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col items-center gap-4 rounded-lg border bg-emerald-50 p-6 text-center dark:bg-emerald-950/20">
+                        <div className="flex size-12 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-900/40">
+                          <ThumbsUp className="size-5 text-emerald-600" />
+                        </div>
+                        <div>
+                          <p className="font-medium text-emerald-700 dark:text-emerald-400">Đã ghi nhận phản hồi!</p>
+                          <p className="mt-1 text-sm text-muted-foreground">
+                            Thông tin này giúp hệ thống cân chỉnh lại giải thích cho bạn trong tương lai.
+                          </p>
+                        </div>
+                        <div className="flex gap-3">
+                          <Button size="sm" onClick={() => router.push("/applicants")}>
+                            <UserSearch className="size-4" />
+                            Về Khách hàng
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              setResult(null);
+                              setFeedbackSent(false);
+                            }}
+                          >
+                            Chấm hồ sơ tiếp
+                          </Button>
+                        </div>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               </motion.div>

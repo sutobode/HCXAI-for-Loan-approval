@@ -215,6 +215,8 @@ export interface PredictionRecord {
   confidence: number;
   narrative?: string | null;
   narrative_model?: string | null;
+  applicant_id?: number | null;
+  applicant_name?: string | null;
 }
 
 export interface PredictionDetail extends PredictionRecord {

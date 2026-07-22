@@ -102,6 +102,17 @@ export default function TrustDashboardPage() {
       />
 
       <Card>
+        <CardContent className="p-4 text-sm text-muted-foreground">
+          <p className="font-medium text-foreground">Trang này dùng để làm gì?</p>
+          <p className="mt-1">
+            Khi bạn đồng ý hoặc ghi đè quyết định AI nhiều lần, hệ thống sẽ nhận ra xu hướng của bạn:
+            bạn có đang tin AI quá mức (đồng ý cả khi AI không chắc)? hay quá hoài nghi (ghi đè cả khi AI rất chắc)?
+            Từ đó, lần sau hệ thống sẽ tự điều chỉnh cách giải thích phù hợp hơn — nhấn mạnh minh chứng hoặc cảnh báo giới hạn mô hình.
+          </p>
+        </CardContent>
+      </Card>
+
+      <Card>
         <CardContent className="flex items-end gap-3 p-4">
           <div className="flex-1">
             <Label htmlFor="user-id" className="mb-1.5">Mã người dùng (email)</Label>

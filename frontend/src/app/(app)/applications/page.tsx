@@ -99,6 +99,7 @@ export default function ApplicationsPage() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Mã</TableHead>
+                  <TableHead>Khách hàng</TableHead>
                   <TableHead>Quyết định</TableHead>
                   <TableHead>Xác suất duyệt</TableHead>
                   <TableHead>Điểm rủi ro</TableHead>
@@ -111,6 +112,9 @@ export default function ApplicationsPage() {
                 {filteredItems.map((p) => (
                   <TableRow key={p.id}>
                     <TableCell className="font-mono text-xs">#{p.id}</TableCell>
+                    <TableCell className="max-w-[140px] truncate text-sm">
+                      {p.applicant_name ?? <span className="text-muted-foreground">—</span>}
+                    </TableCell>
                     <TableCell>
                       <Badge variant={p.prediction === "Approved" ? "default" : "destructive"}>
                         {p.prediction === "Approved" ? "Được duyệt" : "Bị từ chối"}

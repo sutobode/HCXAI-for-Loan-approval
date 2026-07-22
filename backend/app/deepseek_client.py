@@ -92,10 +92,19 @@ def build_template_explanation(prediction: dict, shap_result: dict, role: str) -
     )
 
 
-def generate_narrative_explanation(prediction: dict, shap_result: dict, role: str = "loan_officer") -> dict:
+def generate_narrative_explanation(
+    prediction: dict,
+    shap_result: dict,
+    role: str = "loan_officer",
+    trust_intervention: str = "none",
+) -> dict:
     """
     Call DeepSeek to turn SHAP contributions into a natural-language explanation.
     Falls back to a deterministic template if DeepSeek is unavailable or errors.
+
+    If `trust_intervention` is not "none", an additional instruction is appended
+    to the system prompt so the *content* of the explanation actually reflects
+    the HCXAI Trust Calibrator's recommendation (not just a UI label).
     """
     client = _get_client()
     if client is None:
@@ -107,6 +116,24 @@ def generate_narrative_explanation(prediction: dict, shap_result: dict, role: st
         }
 
     system_prompt = ROLE_PROMPTS.get(role, ROLE_PROMPTS["loan_officer"])
+
+    # HCXAI Trust Intervention: modify the LLM system prompt to produce
+    # content that addresses the user's calibration gap, not just a UI nudge.
+    if trust_intervention == "highlight_uncertainty":
+        system_prompt += (
+            "\n\nQUAN TRỌNG (Trust Calibrator): Người dùng này có xu hướng quá tin tưởng vào AI. "
+            "Hãy NHẤN MẠNH giới hạn và mức độ không chắc chắn của mô hình trong giải thích: "
+            "đề cập rõ ràng rằng mô hình có thể sai, chỉ ra trường hợp nào kết quả kém tin cậy, "
+            "và khuyến khích người dùng xem xét thêm bằng chứng trước khi đồng ý."
+        )
+    elif trust_intervention == "highlight_evidence":
+        system_prompt += (
+            "\n\nQUAN TRỌNG (Trust Calibrator): Người dùng này thường không tin tưởng AI ngay cả "
+            "khi độ tin cậy cao. Hãy BỔ SUNG thêm minh chứng hỗ trợ quyết định: trích dẫn "
+            "nhiều yếu tố cùng chiều, nhấn mạnh mức độ rõ ràng của tín hiệu, và giúp người "
+            "dùng thấy tại sao mô hình đáng tin cậy trong trường hợp cụ thể này."
+        )
+
     top_factors = shap_result["contributions"][:5]
 
     user_prompt = (

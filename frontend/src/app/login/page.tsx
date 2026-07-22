@@ -182,9 +182,13 @@ export default function LoginPage() {
               </Form>
 
               <div className="mt-6 rounded-lg border bg-muted/40 p-3 text-xs text-muted-foreground">
-                <p className="font-medium text-foreground">Tài khoản quản trị mặc định</p>
-                <p>Email: admin@hcxai.local</p>
-                <p>Mật khẩu: thiết lập qua DEFAULT_ADMIN_PASSWORD (xem README backend)</p>
+                <p className="mb-1 font-medium text-foreground">Tài khoản demo mặc định</p>
+                <div className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-0.5">
+                  <span className="text-muted-foreground">Email:</span>
+                  <code className="select-all font-mono text-foreground">admin@hcxai.local</code>
+                  <span className="text-muted-foreground">Mật khẩu:</span>
+                  <code className="select-all font-mono text-foreground">ChangeMe123!</code>
+                </div>
               </div>
             </CardContent>
           </Card>

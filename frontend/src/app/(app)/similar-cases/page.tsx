@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { Users2 } from "lucide-react";
 
@@ -9,14 +10,46 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { LoanApplicationForm } from "@/components/loan/loan-application-form";
-import { findSimilarCases } from "@/lib/endpoints";
+import { LoanApplicationForm, type LoanApplicationFormValues, DEFAULT_APPLICATION } from "@/components/loan/loan-application-form";
+import { findSimilarCases, getApplicantDetail } from "@/lib/endpoints";
 import { getApiErrorMessage } from "@/lib/api";
 import type { LoanApplication, SimilarCasesResult } from "@/lib/types";
 
 export default function SimilarCasesPage() {
+  const searchParams = useSearchParams();
+  const applicantIdParam = searchParams.get("applicant_id");
+
   const [result, setResult] = useState<SimilarCasesResult | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [applicantName, setApplicantName] = useState<string | null>(null);
+  const [prefillValues, setPrefillValues] = useState<LoanApplicationFormValues | null>(null);
+
+  useEffect(() => {
+    if (!applicantIdParam) return;
+    const id = Number(applicantIdParam);
+    if (Number.isNaN(id)) return;
+    getApplicantDetail(id)
+      .then((detail) => {
+        setApplicantName(detail.applicant.full_name);
+        if (detail.applications.length > 0) {
+          const f = detail.applications[0].features;
+          setPrefillValues({
+            no_of_dependents: Number(f.no_of_dependents) || 0,
+            education: (f.education as "Graduate" | "Not Graduate") || "Graduate",
+            self_employed: (f.self_employed as "Yes" | "No") || "No",
+            income_annum: Number(f.income_annum) || 0,
+            loan_amount: Number(f.loan_amount) || 0,
+            loan_term: Number(f.loan_term) || 12,
+            cibil_score: Number(f.cibil_score) || 600,
+            residential_assets_value: Number(f.residential_assets_value) || 0,
+            commercial_assets_value: Number(f.commercial_assets_value) || 0,
+            luxury_assets_value: Number(f.luxury_assets_value) || 0,
+            bank_asset_value: Number(f.bank_asset_value) || 0,
+          });
+        }
+      })
+      .catch(() => {});
+  }, [applicantIdParam]);
 
   async function handleSubmit(values: LoanApplication) {
     setIsLoading(true);
@@ -34,7 +67,7 @@ export default function SimilarCasesPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Tra cứu Hồ sơ Tương tự"
+        title={applicantName ? `Hồ sơ tương tự: ${applicantName}` : "Tra cứu Hồ sơ Tương tự"}
         description="Case-Based Reasoning: tìm k hồ sơ trong lịch sử gần nhất (k-NN của scikit-learn) và so sánh kết quả của chúng."
       />
 
@@ -46,6 +79,8 @@ export default function SimilarCasesPage() {
           </CardHeader>
           <CardContent>
             <LoanApplicationForm
+              key={prefillValues ? "prefilled" : "default"}
+              defaultValues={prefillValues ?? undefined}
               onSubmit={handleSubmit}
               isSubmitting={isLoading}
               submitLabel={isLoading ? "Đang tìm kiếm..." : "Tìm hồ sơ tương tự"}

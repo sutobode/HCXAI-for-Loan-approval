@@ -89,11 +89,20 @@ export default function ApplicantsPage() {
               const hasPrediction = !!applicant.latest_prediction;
               const isApproved = applicant.latest_prediction?.prediction === "Approved";
 
+              // UX: click khách đã chấm → xem kết quả, chưa chấm → mở form
+              function handleClick() {
+                if (hasPrediction && applicant.latest_prediction) {
+                  router.push(`/applications/${applicant.latest_prediction.prediction_id}`);
+                } else {
+                  router.push(`/applications/new?applicant_id=${applicant.id}`);
+                }
+              }
+
               return (
                 <Card
                   key={applicant.id}
                   className="group relative cursor-pointer transition-shadow hover:shadow-md"
-                  onClick={() => router.push(`/applications/new?applicant_id=${applicant.id}`)}
+                  onClick={handleClick}
                 >
                   <CardContent className="p-4">
                     {/* Header row */}
@@ -138,7 +147,7 @@ export default function ApplicantsPage() {
                     <div className="mt-3 flex items-center justify-between border-t pt-3 text-xs text-muted-foreground">
                       <span>{applicant.total_applications} hồ sơ</span>
                       <span className="flex items-center gap-1 font-medium text-primary opacity-0 transition-opacity group-hover:opacity-100">
-                        Chấm điểm <ArrowRight className="size-3" />
+                        {hasPrediction ? "Xem kết quả" : "Chấm điểm"} <ArrowRight className="size-3" />
                       </span>
                     </div>
                   </CardContent>

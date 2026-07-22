@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { ArrowRight, FlaskConical } from "lucide-react";
 
@@ -21,7 +22,7 @@ import {
   DEFAULT_APPLICATION,
   type LoanApplicationFormValues,
 } from "@/components/loan/loan-application-form";
-import { runSensitivitySweep, runWhatIf } from "@/lib/endpoints";
+import { getApplicantDetail, runSensitivitySweep, runWhatIf } from "@/lib/endpoints";
 import { getApiErrorMessage } from "@/lib/api";
 import type { LoanApplication, SensitivityResult, WhatIfResult } from "@/lib/types";
 import ReactECharts from "echarts-for-react";
@@ -79,7 +80,11 @@ function SensitivityChart({ result }: { result: SensitivityResult }) {
 }
 
 export default function WhatIfPage() {
+  const searchParams = useSearchParams();
+  const applicantIdParam = searchParams.get("applicant_id");
+
   const [baseValues, setBaseValues] = useState<LoanApplicationFormValues>(DEFAULT_APPLICATION);
+  const [formKey, setFormKey] = useState(0);
   const [overrideFeature, setOverrideFeature] = useState("cibil_score");
   const [overrideValue, setOverrideValue] = useState<number>(600);
   const [sweepFeature, setSweepFeature] = useState("cibil_score");
@@ -88,6 +93,37 @@ export default function WhatIfPage() {
   const [sensitivityResult, setSensitivityResult] = useState<SensitivityResult | null>(null);
   const [isRunningWhatIf, setIsRunningWhatIf] = useState(false);
   const [isRunningSweep, setIsRunningSweep] = useState(false);
+  const [applicantName, setApplicantName] = useState<string | null>(null);
+
+  // Prefill from applicant if query param provided
+  useEffect(() => {
+    if (!applicantIdParam) return;
+    const id = Number(applicantIdParam);
+    if (Number.isNaN(id)) return;
+    getApplicantDetail(id)
+      .then((detail) => {
+        setApplicantName(detail.applicant.full_name);
+        if (detail.applications.length > 0) {
+          const f = detail.applications[0].features;
+          const prefilled: LoanApplicationFormValues = {
+            no_of_dependents: Number(f.no_of_dependents) || 0,
+            education: (f.education as "Graduate" | "Not Graduate") || "Graduate",
+            self_employed: (f.self_employed as "Yes" | "No") || "No",
+            income_annum: Number(f.income_annum) || 0,
+            loan_amount: Number(f.loan_amount) || 0,
+            loan_term: Number(f.loan_term) || 12,
+            cibil_score: Number(f.cibil_score) || 600,
+            residential_assets_value: Number(f.residential_assets_value) || 0,
+            commercial_assets_value: Number(f.commercial_assets_value) || 0,
+            luxury_assets_value: Number(f.luxury_assets_value) || 0,
+            bank_asset_value: Number(f.bank_asset_value) || 0,
+          };
+          setBaseValues(prefilled);
+          setFormKey((k) => k + 1);
+        }
+      })
+      .catch(() => {});
+  }, [applicantIdParam]);
 
   async function handleBaseSubmit(values: LoanApplication) {
     setBaseValues(values as LoanApplicationFormValues);
@@ -123,7 +159,7 @@ export default function WhatIfPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Phòng thí nghiệm Giả định"
+        title={applicantName ? `Giả định: ${applicantName}` : "Phòng thí nghiệm Giả định"}
         description="Khám phá việc thay đổi một yếu tố ảnh hưởng đến quyết định của mô hình như thế nào, và trực quan hóa ranh giới quyết định duyệt."
       />
 
@@ -134,6 +170,7 @@ export default function WhatIfPage() {
         </CardHeader>
         <CardContent>
           <LoanApplicationForm
+            key={formKey}
             defaultValues={baseValues}
             onSubmit={handleBaseSubmit}
             submitLabel="Lưu kịch bản gốc"
