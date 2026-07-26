@@ -145,3 +145,38 @@ def generate_mitigation_recommendations(by_attribute: dict[str, Any]) -> list[di
             }
         )
     return recommendations
+
+
+_cached_report: dict[str, Any] | None = None
+
+
+def get_cached_fairness_report(explainer: LoanExplainer) -> dict[str, Any]:
+    """
+    Cache đơn giản, dùng lại kết quả compute_fairness_report() cho tới khi bị
+    invalidate (khi model được train/activate lại -- xem model_registry.py).
+    Tránh việc mỗi lượt /explain (kiểm tra trigger review) phải tính lại toàn
+    bộ báo cáo fairness (vốn re-evaluate model trên cả tập test).
+    """
+    global _cached_report
+    if _cached_report is None:
+        _cached_report = compute_fairness_report(explainer)
+    return _cached_report
+
+
+def invalidate_fairness_cache() -> None:
+    global _cached_report
+    _cached_report = None
+
+
+def is_group_flagged(explainer: LoanExplainer, attribute: str, group_value: str) -> bool:
+    """True nếu `group_value` (vd 'Not Graduate') thuộc thuộc tính `attribute`
+    (vd 'education') hiện đang bị Fairness Report gắn cờ vi phạm Four-Fifths Rule."""
+    report = get_cached_fairness_report(explainer)
+    attr_result = report["by_attribute"].get(attribute)
+    if not attr_result or attr_result["passes_four_fifths_rule"] is not False:
+        return False
+    rates = attr_result["approval_rate_by_group"]
+    if not rates:
+        return False
+    disadvantaged_group = min(rates, key=rates.get)
+    return group_value == disadvantaged_group

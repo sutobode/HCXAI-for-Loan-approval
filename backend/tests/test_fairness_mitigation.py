@@ -58,6 +58,45 @@ def test_multiple_failing_attributes_each_get_a_recommendation():
     assert {r["attribute"] for r in recs} == {"education", "self_employed"}
 
 
+def test_cached_fairness_report_reuses_result(monkeypatch):
+    from app import fairness as fairness_module
+
+    call_count = {"n": 0}
+    original = fairness_module.compute_fairness_report
+
+    def counting_wrapper(explainer):
+        call_count["n"] += 1
+        return original(explainer)
+
+    monkeypatch.setattr(fairness_module, "compute_fairness_report", counting_wrapper)
+    fairness_module.invalidate_fairness_cache()
+
+    # compute_fairness_report() re-runs the real model over the held-out test
+    # split (explainer.model.predict_proba(...)), so the fake explainer needs
+    # a minimal stub model rather than a bare object -- what matters for this
+    # test is only that compute_fairness_report is invoked at most once, not
+    # the resulting report's content.
+    class FakeModel:
+        def predict_proba(self, X):
+            import numpy as np
+
+            return np.tile([0.4, 0.6], (len(X), 1))
+
+    class FakeExplainer:
+        model = FakeModel()
+
+    try:
+        fairness_module.get_cached_fairness_report(FakeExplainer())
+        fairness_module.get_cached_fairness_report(FakeExplainer())
+        assert call_count["n"] == 1
+    finally:
+        # The module-level cache is global process state that outlives
+        # monkeypatch's automatic teardown -- clear it so this test's fake
+        # (stubbed-model) report can't leak into other tests that rely on
+        # a real compute_fairness_report() result later in the session.
+        fairness_module.invalidate_fairness_cache()
+
+
 # /fairness/* endpoints run compute_fairness_report() against the active
 # Model Registry version. The `client` fixture (via client_as_risk_manager)
 # spins up a fresh, isolated SQLite DB per test with no active model version

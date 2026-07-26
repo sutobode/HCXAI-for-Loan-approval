@@ -232,6 +232,10 @@ def train_new_version(
     )
 
     logger.info("Registered model version %s (algorithm=%s, active=%s)", version_label, algorithm, activate)
+
+    from . import fairness as fairness_module
+    fairness_module.invalidate_fairness_cache()
+
     return record
 
 
