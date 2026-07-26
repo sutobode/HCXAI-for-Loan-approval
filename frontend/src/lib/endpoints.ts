@@ -20,6 +20,7 @@ import type {
   HCXAITrustDashboard,
   LimeExplanationResult,
   LoanApplication,
+  MitigationRecommendation,
   ModelComparisonResult,
   ModelVersion,
   MonitoringSnapshot,
@@ -278,6 +279,18 @@ export async function findSimilarCases(
 
 export async function getFairnessReport(): Promise<FairnessReport> {
   const { data } = await apiClient.get<FairnessReport>("/fairness/report");
+  return data;
+}
+
+export async function interpretFairnessReport(): Promise<InterpretResult> {
+  const { data } = await apiClient.post<InterpretResult>("/fairness/interpret");
+  return data;
+}
+
+export async function getMitigationRecommendations(elaborate = false): Promise<MitigationRecommendation[]> {
+  const { data } = await apiClient.get<MitigationRecommendation[]>("/fairness/mitigation-recommendations", {
+    params: { elaborate },
+  });
   return data;
 }
 

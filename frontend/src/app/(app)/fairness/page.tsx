@@ -1,6 +1,6 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { ShieldHalf, CheckCircle2, AlertTriangle, Gavel } from "lucide-react";
 import ReactECharts from "echarts-for-react";
 import { useTheme } from "next-themes";
@@ -8,10 +8,12 @@ import { useTheme } from "next-themes";
 import { PageHeader } from "@/components/layout/page-header";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
 import { GlossaryTerm } from "@/components/ui/glossary-term";
-import { getFairnessReport } from "@/lib/endpoints";
+import { AiInterpretButton } from "@/components/ui/ai-interpret-button";
+import { getFairnessReport, getMitigationRecommendations, interpretFairnessReport } from "@/lib/endpoints";
 import type { FairnessGroupResult } from "@/lib/types";
 
 function GroupBarChart({ result }: { result: FairnessGroupResult }) {
@@ -58,6 +60,10 @@ export default function FairnessPage() {
   const { data, isLoading } = useQuery({
     queryKey: ["fairness-report"],
     queryFn: getFairnessReport,
+  });
+
+  const elaborateMutation = useMutation({
+    mutationFn: () => getMitigationRecommendations(true),
   });
 
   return (
@@ -112,6 +118,8 @@ export default function FairnessPage() {
               )}
             </AlertDescription>
           </Alert>
+
+          <AiInterpretButton onRun={interpretFairnessReport} label="Diễn giải báo cáo công bằng bằng AI" />
 
           <div className="grid gap-4 sm:grid-cols-3">
             <Card>
@@ -213,6 +221,21 @@ export default function FairnessPage() {
                         <Badge variant="secondary" className="mt-2">
                           Cần phê duyệt của cán bộ tuân thủ
                         </Badge>
+                      )}
+                      {elaborateMutation.data?.find((r) => r.attribute === rec.attribute)?.llm_detailed_writeup ? (
+                        <p className="mt-2 text-sm">
+                          {elaborateMutation.data.find((r) => r.attribute === rec.attribute)!.llm_detailed_writeup}
+                        </p>
+                      ) : (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="mt-2"
+                          disabled={elaborateMutation.isPending}
+                          onClick={() => elaborateMutation.mutate()}
+                        >
+                          Xem diễn giải chi tiết hơn bằng AI
+                        </Button>
                       )}
                     </div>
                   ))}

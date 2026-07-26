@@ -498,6 +498,7 @@ export interface MitigationRecommendation {
   approval_rate_gap: number;
   recommendation: string;
   requires_human_approval: boolean;
+  llm_detailed_writeup: string | null;
 }
 
 // --------------------------------------------------------------------------
