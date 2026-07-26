@@ -150,6 +150,11 @@ export async function getTrustDashboard(userId: string): Promise<HCXAITrustDashb
   return data;
 }
 
+export async function interpretTrustDashboard(userId: string): Promise<InterpretResult> {
+  const { data } = await apiClient.get<InterpretResult>(`/trust/${encodeURIComponent(userId)}/interpret`);
+  return data;
+}
+
 export async function getFeedbackAnalytics(): Promise<FeedbackAnalytics> {
   const { data } = await apiClient.get<FeedbackAnalytics>("/feedback/analytics");
   return data;
@@ -161,6 +166,13 @@ export async function getFeedbackAnalytics(): Promise<FeedbackAnalytics> {
 
 export async function getOverrideAnalysis(userId?: string): Promise<OverrideAnalysisResult> {
   const { data } = await apiClient.get<OverrideAnalysisResult>("/hcxai/override-analysis", {
+    params: userId ? { user_id: userId } : undefined,
+  });
+  return data;
+}
+
+export async function interpretOverrideAnalysis(userId?: string): Promise<InterpretResult> {
+  const { data } = await apiClient.get<InterpretResult>("/hcxai/override-analysis/interpret", {
     params: userId ? { user_id: userId } : undefined,
   });
   return data;
@@ -296,6 +308,11 @@ export async function getMitigationRecommendations(elaborate = false): Promise<M
 
 export async function getMonitoringSnapshot(): Promise<MonitoringSnapshot> {
   const { data } = await apiClient.get<MonitoringSnapshot>("/monitoring/snapshot");
+  return data;
+}
+
+export async function interpretMonitoringSnapshot(): Promise<InterpretResult> {
+  const { data } = await apiClient.post<InterpretResult>("/monitoring/interpret");
   return data;
 }
 

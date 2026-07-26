@@ -10,7 +10,8 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { GlossaryTerm } from "@/components/ui/glossary-term";
-import { getMonitoringSnapshot } from "@/lib/endpoints";
+import { AiInterpretButton } from "@/components/ui/ai-interpret-button";
+import { getMonitoringSnapshot, interpretMonitoringSnapshot } from "@/lib/endpoints";
 
 export default function MonitoringPage() {
   const { data, isLoading } = useQuery({
@@ -189,6 +190,11 @@ export default function MonitoringPage() {
               )}
             </CardContent>
           </Card>
+
+          <AiInterpretButton
+            onRun={interpretMonitoringSnapshot}
+            label="Diễn giải toàn bộ báo cáo giám sát bằng AI"
+          />
         </>
       ) : (
         <div className="flex flex-col items-center gap-2 py-16 text-center text-muted-foreground">

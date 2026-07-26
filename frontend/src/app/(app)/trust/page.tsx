@@ -23,7 +23,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { GlossaryTerm } from "@/components/ui/glossary-term";
-import { getFeedbackAnalytics, getTrustDashboard } from "@/lib/endpoints";
+import { AiInterpretButton } from "@/components/ui/ai-interpret-button";
+import { getFeedbackAnalytics, getTrustDashboard, interpretTrustDashboard } from "@/lib/endpoints";
 import { useAuthStore } from "@/stores/auth-store";
 import type { TrustCalibration, TrustTrend } from "@/lib/types";
 
@@ -275,6 +276,13 @@ export default function TrustDashboardPage() {
             </CardContent>
           </Card>
         </div>
+      )}
+
+      {data && (
+        <AiInterpretButton
+          onRun={() => interpretTrustDashboard(queryUserId)}
+          label="Diễn giải hồ sơ tin cậy này bằng AI"
+        />
       )}
 
       {analytics && (
