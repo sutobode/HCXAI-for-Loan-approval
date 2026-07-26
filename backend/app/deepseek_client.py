@@ -194,3 +194,55 @@ def generate_narrative_explanation(
             "model": "template-fallback",
             "cached": False,
         }
+
+
+_INTERPRET_FALLBACK_NARRATIVE = (
+    "Chưa thể tạo diễn giải bằng AI cho phần này lúc này (dịch vụ LLM không khả dụng). "
+    "Vui lòng xem trực tiếp các số liệu kỹ thuật ở trên; các badge/chú thích (hình dấu hỏi) "
+    "vẫn giải nghĩa từng thuật ngữ."
+)
+
+
+def interpret_technical_output(
+    instruction: str,
+    data_summary: str,
+    max_tokens: int = 200,
+) -> dict:
+    """
+    LLM như lớp dịch (KHÔNG phải tác nhân ra quyết định): nhận một `instruction`
+    mô tả cần diễn giải gì, và `data_summary` là số liệu/kết quả kỹ thuật ĐÃ
+    tính toán sẵn (không để LLM tự tính lại hay suy đoán ngoài phạm vi này).
+    Dùng chung cho mọi endpoint "Diễn giải bằng AI" (LIME, Explanation Quality,
+    Counterfactual, Fairness, Monitoring, Trust Dashboard, Override Analysis).
+
+    Trả về cùng khuôn dạng với generate_narrative_explanation: {"narrative", "model"},
+    fallback về một câu template tiếng Việt cố định nếu DeepSeek không khả dụng/lỗi.
+    """
+    client = _get_client()
+    if client is None:
+        return {"narrative": _INTERPRET_FALLBACK_NARRATIVE, "model": "template-fallback"}
+
+    system_prompt = (
+        "Bạn là trợ lý diễn giải kỹ thuật cho nhân viên ngân hàng không chuyên sâu về AI. "
+        "Nhiệm vụ DUY NHẤT của bạn là dịch số liệu kỹ thuật đã cho thành 2-4 câu tiếng Việt "
+        "dễ hiểu, KHÔNG tự suy luận thêm thông tin ngoài số liệu được cung cấp, KHÔNG đưa ra "
+        "quyết định hay khuyến nghị nghiệp vụ mới. " + _VI_INSTRUCTION
+    )
+    user_prompt = f"{instruction}\n\nSố liệu:\n{data_summary}"
+
+    try:
+        response = client.chat.completions.create(
+            model=settings.DEEPSEEK_MODEL,
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt},
+            ],
+            max_tokens=max_tokens,
+            temperature=settings.DEEPSEEK_TEMPERATURE,
+            timeout=settings.DEEPSEEK_TIMEOUT_SECONDS,
+        )
+        narrative = response.choices[0].message.content.strip()
+        return {"narrative": narrative, "model": settings.DEEPSEEK_MODEL}
+    except (APIError, APITimeoutError) as exc:
+        logger.warning("DeepSeek interpret call failed (%s); using template fallback", exc.__class__.__name__)
+        return {"narrative": _INTERPRET_FALLBACK_NARRATIVE, "model": "template-fallback"}
