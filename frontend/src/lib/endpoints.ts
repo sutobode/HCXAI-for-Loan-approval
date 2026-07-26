@@ -288,9 +288,15 @@ export async function getActiveModelVersion(): Promise<ModelVersion> {
   return data;
 }
 
+export async function listTrainingAlgorithms(): Promise<string[]> {
+  const { data } = await apiClient.get<{ algorithms: string[] }>("/model/train/algorithms");
+  return data.algorithms;
+}
+
 export async function trainModelVersion(payload: {
   notes?: string;
   activate?: boolean;
+  algorithm?: string;
 }): Promise<ModelVersion> {
   const { data } = await apiClient.post<ModelVersion>("/model/train", payload);
   return data;

@@ -23,6 +23,7 @@ import {
   activateModelVersion,
   compareModelVersions,
   listModelVersions,
+  listTrainingAlgorithms,
   trainModelVersion,
 } from "@/lib/endpoints";
 import { getApiErrorMessage } from "@/lib/api";
@@ -37,6 +38,13 @@ export default function ModelCenterPage() {
     queryFn: listModelVersions,
   });
 
+  const [selectedAlgorithm, setSelectedAlgorithm] = useState<string>("xgboost");
+
+  const { data: algorithms } = useQuery({
+    queryKey: ["training-algorithms"],
+    queryFn: listTrainingAlgorithms,
+  });
+
   const [compareA, setCompareA] = useState<string>("");
   const [compareB, setCompareB] = useState<string>("");
 
@@ -47,9 +55,14 @@ export default function ModelCenterPage() {
   });
 
   const trainMutation = useMutation({
-    mutationFn: () => trainModelVersion({ notes: "Huấn luyện lại thủ công từ Trung tâm Mô hình", activate: true }),
+    mutationFn: () =>
+      trainModelVersion({
+        notes: "Huấn luyện lại thủ công từ Trung tâm Mô hình",
+        activate: true,
+        algorithm: selectedAlgorithm,
+      }),
     onSuccess: (result) => {
-      toast.success(`Đã huấn luyện và kích hoạt ${result.version_label}`);
+      toast.success(`Đã huấn luyện và kích hoạt ${result.version_label} (${result.algorithm})`);
       queryClient.invalidateQueries({ queryKey: ["model-versions"] });
     },
     onError: (error) => toast.error(getApiErrorMessage(error, "Huấn luyện thất bại")),
@@ -76,10 +89,24 @@ export default function ModelCenterPage() {
         }
         actions={
           isAdmin ? (
-            <Button onClick={() => trainMutation.mutate()} disabled={trainMutation.isPending}>
-              <PlayCircle className="size-4" />
-              {trainMutation.isPending ? "Đang huấn luyện..." : "Huấn luyện phiên bản mới"}
-            </Button>
+            <div className="flex items-center gap-2">
+              <Select value={selectedAlgorithm} onValueChange={(v) => v && setSelectedAlgorithm(v)}>
+                <SelectTrigger className="w-44">
+                  <SelectValue placeholder="Thuật toán" />
+                </SelectTrigger>
+                <SelectContent>
+                  {(algorithms ?? ["xgboost"]).map((algo) => (
+                    <SelectItem key={algo} value={algo}>
+                      {algo}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Button onClick={() => trainMutation.mutate()} disabled={trainMutation.isPending}>
+                <PlayCircle className="size-4" />
+                {trainMutation.isPending ? "Đang huấn luyện..." : "Huấn luyện phiên bản mới"}
+              </Button>
+            </div>
           ) : undefined
         }
       />
