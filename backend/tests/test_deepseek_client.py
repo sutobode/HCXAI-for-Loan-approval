@@ -7,6 +7,7 @@ The real integration was manually verified against the live API separately.
 from unittest.mock import patch
 
 from app.deepseek_client import (
+    answer_question_about_prediction,
     build_template_explanation,
     generate_narrative_explanation,
     interpret_technical_output,
@@ -64,3 +65,14 @@ def test_interpret_technical_output_falls_back_without_api_key(monkeypatch):
     )
     assert result["model"] == "template-fallback"
     assert "chưa thể tạo diễn giải" in result["narrative"].lower()
+
+
+def test_answer_question_falls_back_without_api_key(monkeypatch):
+    monkeypatch.setattr("app.deepseek_client.settings.DEEPSEEK_API_KEY", None)
+    result = answer_question_about_prediction(
+        prediction=FAKE_PREDICTION,
+        shap_result=FAKE_SHAP_RESULT,
+        narrative="Hồ sơ được duyệt vì điểm CIBIL tốt.",
+        question="Vì sao thu nhập không giúp nhiều hơn?",
+    )
+    assert result["model"] == "template-fallback"

@@ -111,3 +111,19 @@ def test_resolve_review_removes_from_queue(client_as_risk_manager, seeded_predic
     assert resp.status_code == 200
     remaining = client_as_risk_manager.get("/review-queue").json()["items"]
     assert seeded_prediction_id not in [item["id"] for item in remaining]
+
+
+def test_ask_about_prediction_returns_answer(client_as_loan_officer, seeded_prediction_id):
+    resp = client_as_loan_officer.post(
+        f"/predictions/{seeded_prediction_id}/ask",
+        json={"question": "Vì sao thu nhập không giúp nhiều hơn?"},
+    )
+    assert resp.status_code == 200
+    body = resp.json()
+    assert "answer" in body and isinstance(body["answer"], str)
+    assert "model" in body
+
+
+def test_ask_about_prediction_404_for_unknown_id(client_as_loan_officer):
+    resp = client_as_loan_officer.post("/predictions/999999/ask", json={"question": "Test?"})
+    assert resp.status_code == 404

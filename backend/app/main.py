@@ -83,7 +83,11 @@ from . import auth, db, hcxai
 from .config import settings
 from .counterfactual import find_counterfactuals
 from .data_processing import encode_single_application
-from .deepseek_client import generate_narrative_explanation, interpret_technical_output
+from .deepseek_client import (
+    answer_question_about_prediction,
+    generate_narrative_explanation,
+    interpret_technical_output,
+)
 from .explainer import get_explainer
 from .explanation_quality import compute_explanation_quality_report
 from .fairness import compute_fairness_report, invalidate_fairness_cache
@@ -94,6 +98,7 @@ from .monitoring import get_monitoring_snapshot
 from .schemas import (
     ActivateModelRequest,
     ApplicantResponse,
+    AskPredictionRequest,
     ChangePasswordRequest,
     CompareModelsRequest,
     CounterfactualRequest,
@@ -507,6 +512,40 @@ def resolve_review_endpoint(
         details={"decision": request.decision},
     )
     return {"status": "resolved"}
+
+
+@app.post("/predictions/{prediction_id}/ask")
+def ask_about_prediction(
+    prediction_id: int,
+    request: AskPredictionRequest,
+    current_user: dict = Depends(auth.require_authenticated),
+):
+    """Context-aware chat Q&A: answers are grounded ONLY in this prediction's
+    stored SHAP/narrative data (no conversation history kept server-side)."""
+    pred = db.get_prediction(prediction_id)
+    if pred is None:
+        raise HTTPException(status_code=404, detail=f"Prediction {prediction_id} not found")
+
+    import json as _json
+
+    shap_result = _json.loads(pred["shap_json"])
+    prediction_dict = {
+        "prediction": pred["prediction"],
+        "approval_probability": pred["approval_probability"],
+        "risk_score": pred["risk_score"],
+        "confidence": pred["confidence"],
+    }
+    result = answer_question_about_prediction(
+        prediction=prediction_dict,
+        shap_result=shap_result,
+        narrative=pred["narrative"] or "",
+        question=request.question,
+    )
+    db.log_audit_event(
+        user_id=current_user["email"], action="prediction.ask",
+        resource_type="prediction", resource_id=str(prediction_id),
+    )
+    return result
 
 
 @app.get("/applicants", response_model=PaginatedApplicants)

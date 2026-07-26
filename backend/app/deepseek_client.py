@@ -246,3 +246,60 @@ def interpret_technical_output(
     except (APIError, APITimeoutError) as exc:
         logger.warning("DeepSeek interpret call failed (%s); using template fallback", exc.__class__.__name__)
         return {"narrative": _INTERPRET_FALLBACK_NARRATIVE, "model": "template-fallback"}
+
+
+def answer_question_about_prediction(
+    prediction: dict,
+    shap_result: dict,
+    narrative: str,
+    question: str,
+) -> dict:
+    """
+    Chat hỏi-đáp theo ngữ cảnh: LLM CHỈ được trả lời dựa trên dữ liệu của
+    chính hồ sơ này (prediction/shap/narrative đã lưu) -- không tự suy đoán
+    thông tin ngoài phạm vi. Stateless theo từng câu hỏi (không lưu lịch sử
+    hội thoại phía server).
+    """
+    client = _get_client()
+    if client is None:
+        return {
+            "answer": "Chưa thể trả lời bằng AI lúc này (dịch vụ LLM không khả dụng). Vui lòng xem lại phần SHAP/narrative ở trên.",
+            "model": "template-fallback",
+        }
+
+    contributions_text = "\n".join(
+        f"- {c['display_name']}: value={c['value']}, shap={c['shap_contribution']:.3f}, direction={c['direction']}"
+        for c in shap_result["contributions"]
+    )
+    system_prompt = (
+        "Bạn là trợ lý trả lời câu hỏi về MỘT hồ sơ vay cụ thể, CHỈ dựa trên dữ liệu SHAP/"
+        "narrative được cung cấp dưới đây. KHÔNG tự suy đoán thông tin không có trong dữ "
+        "liệu, KHÔNG đưa ra quyết định hay khuyến nghị nghiệp vụ mới ngoài việc giải thích "
+        "số liệu đã có. " + _VI_INSTRUCTION
+    )
+    user_prompt = (
+        f"Kết quả: {prediction['prediction']} (xác suất {prediction['approval_probability']:.2%})\n"
+        f"Narrative đã sinh trước đó: {narrative}\n"
+        f"Toàn bộ yếu tố SHAP:\n{contributions_text}\n\n"
+        f"Câu hỏi của nhân viên: {question}\n\n"
+        "Trả lời trong tối đa 100 từ, chỉ dựa trên số liệu trên."
+    )
+
+    try:
+        response = client.chat.completions.create(
+            model=settings.DEEPSEEK_MODEL,
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt},
+            ],
+            max_tokens=250,
+            temperature=settings.DEEPSEEK_TEMPERATURE,
+            timeout=settings.DEEPSEEK_TIMEOUT_SECONDS,
+        )
+        return {"answer": response.choices[0].message.content.strip(), "model": settings.DEEPSEEK_MODEL}
+    except (APIError, APITimeoutError) as exc:
+        logger.warning("DeepSeek ask call failed (%s); using template fallback", exc.__class__.__name__)
+        return {
+            "answer": "Chưa thể trả lời bằng AI lúc này (dịch vụ LLM không khả dụng). Vui lòng xem lại phần SHAP/narrative ở trên.",
+            "model": "template-fallback",
+        }

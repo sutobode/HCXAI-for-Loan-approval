@@ -243,3 +243,7 @@ class CompareModelsRequest(BaseModel):
 class ResolveReviewRequest(BaseModel):
     decision: Literal["confirmed", "overridden"]
     note: str | None = None
+
+
+class AskPredictionRequest(BaseModel):
+    question: str = Field(min_length=1, max_length=500)
