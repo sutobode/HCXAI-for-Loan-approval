@@ -191,12 +191,16 @@ def record_prediction_and_context(
     narrative_model: str,
     model_version: str = "unknown",
     applicant_id: int | None = None,
+    needs_review: bool = False,
+    review_reasons: list[str] | None = None,
 ) -> tuple[int, int]:
     """
     Persist the application + prediction, returning (application_id, prediction_id).
     Also records a prediction snapshot (Decision Provenance + Prediction Drift input).
     If `applicant_id` is given, the application is linked to that Applicant
     (Loan Queue) record instead of being an anonymous, disconnected submission.
+    `needs_review`/`review_reasons` come from main.py::evaluate_review_triggers and
+    flag the prediction for mandatory human review (Human-in-the-loop).
     """
     application_id = db.save_application(features, applicant_id=applicant_id)
     prediction_id = db.save_prediction(
@@ -206,6 +210,8 @@ def record_prediction_and_context(
         narrative=narrative,
         narrative_model=narrative_model,
         model_version=model_version,
+        needs_review=needs_review,
+        review_reasons=review_reasons,
     )
     db.save_prediction_snapshot(model_version, prediction["approval_probability"])
     return application_id, prediction_id

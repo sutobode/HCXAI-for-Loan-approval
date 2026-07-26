@@ -343,13 +343,16 @@ def save_prediction(
     narrative: str | None = None,
     narrative_model: str | None = None,
     model_version: str = "unknown",
+    needs_review: bool = False,
+    review_reasons: list[str] | None = None,
 ) -> int:
     with get_connection() as conn:
         cur = conn.execute(
             """INSERT INTO predictions
                (application_id, created_at, prediction, approval_probability,
-                risk_score, confidence, shap_json, narrative, narrative_model, model_version)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                risk_score, confidence, shap_json, narrative, narrative_model,
+                model_version, needs_review, review_reasons)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
             (
                 application_id,
                 _now(),
@@ -361,6 +364,8 @@ def save_prediction(
                 narrative,
                 narrative_model,
                 model_version,
+                int(needs_review),
+                json.dumps(review_reasons or []),
             ),
         )
         return cur.lastrowid

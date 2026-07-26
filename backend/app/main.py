@@ -73,6 +73,7 @@ from __future__ import annotations
 import logging
 import os
 from contextlib import asynccontextmanager
+from typing import Any
 
 from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -310,6 +311,37 @@ def predict(
     return PredictionResponse(**result)
 
 
+def evaluate_review_triggers(
+    prediction: dict[str, Any],
+    application: dict[str, Any],
+    explainer: Any,
+) -> tuple[bool, list[str]]:
+    """
+    Human-in-the-loop: quyết định một prediction có cần vào hàng chờ duyệt
+    bắt buộc hay không, dựa trên 3 tín hiệu độc lập (ngưỡng cấu hình qua
+    settings, xem config.py). `explainer` có thể là None trong test đơn vị
+    thuần logic (không cần fairness check thật).
+    """
+    reasons: list[str] = []
+
+    if prediction["confidence"] < settings.REVIEW_CONFIDENCE_THRESHOLD:
+        reasons.append("low_confidence")
+
+    if application.get("loan_amount", 0) > settings.REVIEW_LOAN_AMOUNT_THRESHOLD:
+        reasons.append("high_loan_amount")
+
+    if explainer is not None:
+        from . import fairness as fairness_module
+
+        for attribute in ("education", "self_employed"):
+            group_value = application.get(attribute)
+            if group_value and fairness_module.is_group_flagged(explainer, attribute, group_value):
+                reasons.append("fairness_group_flag")
+                break
+
+    return (len(reasons) > 0, reasons)
+
+
 @app.post("/explain", response_model=HCXAIExplanationResponse)
 def explain(
     request: ExplainRequest,
@@ -331,6 +363,10 @@ def explain(
         prediction, shap_result, role=request.role, trust_intervention=strategy.trust_intervention
     )
 
+    needs_review, review_reasons = evaluate_review_triggers(
+        prediction, request.application.model_dump(), explainer
+    )
+
     application_id, prediction_id = hcxai.record_prediction_and_context(
         request.application.model_dump(),
         prediction,
@@ -339,6 +375,8 @@ def explain(
         narrative_model=narrative_result["model"],
         model_version=explainer.version_label,
         applicant_id=request.applicant_id,
+        needs_review=needs_review,
+        review_reasons=review_reasons,
     )
     db.log_audit_event(
         user_id=current_user["email"],
