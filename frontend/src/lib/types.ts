@@ -222,6 +222,24 @@ export interface PredictionRecord {
   model_version?: string | null;
   applicant_id?: number | null;
   applicant_name?: string | null;
+  needs_review?: number;
+  review_reasons?: string | null;
+  reviewed_by?: string | null;
+}
+
+// --------------------------------------------------------------------------
+// Human-in-the-loop: Review Queue
+// --------------------------------------------------------------------------
+
+export interface ReviewQueueItem extends PredictionRecord {
+  needs_review: number;
+  review_reasons: string; // JSON string, parse ở component
+  reviewed_by: string | null;
+}
+
+export interface ReviewQueueResponse {
+  items: ReviewQueueItem[];
+  total: number;
 }
 
 export interface PredictionDetail extends PredictionRecord {

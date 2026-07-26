@@ -21,6 +21,7 @@ import {
   History,
   Settings,
   UserSearch,
+  ShieldAlert,
 } from "lucide-react";
 
 import {
@@ -111,6 +112,12 @@ const NAV_GROUPS: NavGroup[] = [
   {
     label: "Quản trị",
     items: [
+      {
+        title: "Hàng chờ duyệt",
+        href: "/review-queue",
+        icon: ShieldAlert,
+        roles: ["admin", "risk_manager"],
+      },
       { title: "Người dùng", href: "/admin/users", icon: Users2, roles: ["admin"] },
       { title: "Nhật ký Kiểm toán", href: "/admin/audit", icon: ScrollText, roles: ["admin"] },
       { title: "Cài đặt", href: "/settings", icon: Settings },

@@ -30,6 +30,7 @@ import type {
   PaginatedPredictions,
   PredictionDetail,
   PredictionResult,
+  ReviewQueueResponse,
   SatisfactionMetrics,
   SensitivityResult,
   SimilarCasesResult,
@@ -126,6 +127,27 @@ export async function listPredictions(limit = 20, offset = 0): Promise<Paginated
 export async function getPredictionDetail(id: number): Promise<PredictionDetail> {
   const { data } = await apiClient.get<PredictionDetail>(`/predictions/${id}`);
   return data;
+}
+
+// --------------------------------------------------------------------------
+// Human-in-the-loop: Review Queue
+// --------------------------------------------------------------------------
+
+export async function getReviewQueue(limit = 50, offset = 0): Promise<ReviewQueueResponse> {
+  const { data } = await apiClient.get<ReviewQueueResponse>("/review-queue", { params: { limit, offset } });
+  return data;
+}
+
+export async function resolveReview(
+  predictionId: number,
+  decision: "confirmed" | "overridden",
+  note?: string
+): Promise<void> {
+  await apiClient.post(`/review-queue/${predictionId}/resolve`, { decision, note });
+}
+
+export async function flagPredictionForReview(predictionId: number): Promise<void> {
+  await apiClient.post(`/predictions/${predictionId}/flag-for-review`);
 }
 
 // --------------------------------------------------------------------------
