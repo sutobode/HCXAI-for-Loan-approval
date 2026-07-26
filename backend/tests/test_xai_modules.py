@@ -128,3 +128,41 @@ def test_explanation_quality_composite_score_in_valid_range(explainer):
         "unstable",
         "insufficient_data",
     )
+
+
+# ---------------------------------------------------------------------------
+# LLM-interpret endpoints: /explain/lime/interpret, /explain/quality/interpret,
+# /explain/counterfactual/interpret. These use the `client`-based fixtures
+# (isolated per-test SQLite DB), which need an active Model Registry version
+# before the underlying /explain/* computation can run -- same requirement
+# as /explain and /predict (see tests/test_auth.py's `_ensure_active_model`).
+# ---------------------------------------------------------------------------
+
+def _ensure_active_model(client):
+    if db.get_active_model_version() is None:
+        train_new_version(trained_by="pytest", notes="auto-trained by test_xai_modules.py interpret tests")
+
+
+def test_lime_interpret_endpoint_returns_narrative(client_as_loan_officer, sample_application_payload):
+    _ensure_active_model(client_as_loan_officer)
+    resp = client_as_loan_officer.post("/explain/lime/interpret", json={"application": sample_application_payload})
+    assert resp.status_code == 200
+    body = resp.json()
+    assert "narrative" in body and isinstance(body["narrative"], str)
+    assert "model" in body
+
+
+def test_quality_interpret_endpoint_returns_narrative(client_as_loan_officer, sample_application_payload):
+    _ensure_active_model(client_as_loan_officer)
+    resp = client_as_loan_officer.post("/explain/quality/interpret", json={"application": sample_application_payload})
+    assert resp.status_code == 200
+    assert "narrative" in resp.json()
+
+
+def test_counterfactual_interpret_endpoint_returns_narrative(client_as_loan_officer, sample_application_payload):
+    _ensure_active_model(client_as_loan_officer)
+    resp = client_as_loan_officer.post(
+        "/explain/counterfactual/interpret", json={"application": sample_application_payload, "n_results": 3}
+    )
+    assert resp.status_code == 200
+    assert "narrative" in resp.json()

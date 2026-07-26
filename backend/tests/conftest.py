@@ -106,3 +106,20 @@ def client_as_loan_officer(client, loan_officer_token):
     """TestClient with loan_officer authorization header."""
     client.headers.update({"Authorization": f"Bearer {loan_officer_token}"})
     return client
+
+
+@pytest.fixture
+def sample_application_payload():
+    return {
+        "no_of_dependents": 2,
+        "education": "Graduate",
+        "self_employed": "No",
+        "income_annum": 9600000,
+        "loan_amount": 29900000,
+        "loan_term": 12,
+        "cibil_score": 550,
+        "residential_assets_value": 2400000,
+        "commercial_assets_value": 17600000,
+        "luxury_assets_value": 22700000,
+        "bank_asset_value": 8000000,
+    }

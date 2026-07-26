@@ -80,7 +80,7 @@ from . import auth, db, hcxai
 from .config import settings
 from .counterfactual import find_counterfactuals
 from .data_processing import encode_single_application
-from .deepseek_client import generate_narrative_explanation
+from .deepseek_client import generate_narrative_explanation, interpret_technical_output
 from .explainer import get_explainer
 from .explanation_quality import compute_explanation_quality_report
 from .fairness import compute_fairness_report
@@ -654,6 +654,81 @@ def explain_quality(
     result = compute_explanation_quality_report(explainer, request.application.model_dump())
     db.log_audit_event(user_id=current_user["email"], action="explain.quality")
     return result
+
+
+@app.post("/explain/lime/interpret")
+def explain_lime_interpret(
+    request: LimeExplainRequest,
+    current_user: dict = Depends(auth.require_authenticated),
+):
+    explainer = _get_explainer_or_503()
+    features_df = encode_single_application(request.application.model_dump(), explainer.encoders)
+    lime_result = get_lime_explainer().explain(features_df)
+
+    top = lime_result["contributions"][:5]
+    data_summary = (
+        f"fidelity_r2={lime_result['fidelity_r2']}\n"
+        + "\n".join(f"- {c['display_name']}: lime_weight={c['lime_weight']:.3f}" for c in top)
+    )
+    return interpret_technical_output(
+        instruction=(
+            "Diễn giải kết quả đối chiếu LIME (mô hình thay thế cục bộ độc lập, dùng để "
+            "kiểm tra chéo với SHAP) cho một nhân viên tín dụng không chuyên sâu về AI. "
+            "fidelity_r2 càng gần 1 thì phép kiểm tra càng đáng tin; fidelity_r2 âm là "
+            "hiện tượng đã biết với model dạng cây, không phải lỗi."
+        ),
+        data_summary=data_summary,
+    )
+
+
+@app.post("/explain/quality/interpret")
+def explain_quality_interpret(
+    request: ExplanationQualityRequest,
+    current_user: dict = Depends(auth.require_authenticated),
+):
+    explainer = _get_explainer_or_503()
+    report = compute_explanation_quality_report(explainer, request.application.model_dump())
+
+    data_summary = (
+        f"composite_quality_score={report['composite_quality_score']}\n"
+        f"stability={report['stability']['interpretation']} (score={report['stability']['stability_score']})\n"
+        f"completeness_is_complete={report['completeness']['is_complete']}\n"
+        f"sparsity={report['sparsity']['interpretation']} (concentration_ratio={report['sparsity']['concentration_ratio']})"
+    )
+    return interpret_technical_output(
+        instruction=(
+            "Diễn giải báo cáo chất lượng giải thích (Stability/Completeness/Sparsity) cho "
+            "một nhân viên tín dụng — họ cần biết có nên tin vào giải thích SHAP của hồ sơ "
+            "này hay không, và vì sao."
+        ),
+        data_summary=data_summary,
+    )
+
+
+@app.post("/explain/counterfactual/interpret")
+def explain_counterfactual_interpret(
+    request: CounterfactualRequest,
+    current_user: dict = Depends(auth.require_authenticated),
+):
+    explainer = _get_explainer_or_503()
+    result = find_counterfactuals(explainer, request.application.model_dump(), n_results=request.n_results)
+
+    if not result["counterfactuals"]:
+        cf_summary = "Không tìm được counterfactual khả thi trong phạm vi tìm kiếm."
+    else:
+        lines = []
+        for cf in result["counterfactuals"]:
+            changes = "; ".join(f"{c['display_name']}: {c['original_value']} → {c['suggested_value']}" for c in cf["changes"])
+            lines.append(f"- Kết quả mới {cf['resulting_decision']} ({cf['resulting_probability']:.0%}): {changes}")
+        cf_summary = "\n".join(lines)
+
+    return interpret_technical_output(
+        instruction=(
+            "Diễn giải các gợi ý Counterfactual (thay đổi tối thiểu để đổi quyết định) thành "
+            "lời khuyên thực tế, dễ hành động cho khách hàng/nhân viên tín dụng."
+        ),
+        data_summary=cf_summary,
+    )
 
 
 # ---------------------------------------------------------------------------
