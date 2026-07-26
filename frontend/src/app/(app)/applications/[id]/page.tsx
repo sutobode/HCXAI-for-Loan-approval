@@ -17,12 +17,16 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RiskGauge } from "@/components/charts/risk-gauge";
 import { ShapChart } from "@/components/charts/shap-chart";
+import { AiInterpretButton } from "@/components/ui/ai-interpret-button";
 import {
   explainWithCounterfactual,
   explainWithLime,
   getDecisionProvenance,
   getExplanationQuality,
   getPredictionDetail,
+  interpretCounterfactual,
+  interpretExplanationQuality,
+  interpretLime,
   submitFeedback,
 } from "@/lib/endpoints";
 import { getApiErrorMessage } from "@/lib/api";
@@ -213,6 +217,9 @@ export default function ApplicationDetailPage() {
                         </li>
                       ))}
                     </ul>
+                    {limeMutation.data && applicationFeatures && (
+                      <AiInterpretButton onRun={() => interpretLime(applicationFeatures)} />
+                    )}
                   </>
                 )}
               </CardContent>
@@ -253,6 +260,9 @@ export default function ApplicationDetailPage() {
                       </div>
                     ))}
                   </div>
+                )}
+                {counterfactualMutation.data && applicationFeatures && (
+                  <AiInterpretButton onRun={() => interpretCounterfactual(applicationFeatures, 3)} />
                 )}
               </CardContent>
             </Card>
@@ -309,6 +319,9 @@ export default function ApplicationDetailPage() {
                       </Badge>
                     </div>
                   </div>
+                )}
+                {qualityMutation.data && applicationFeatures && (
+                  <AiInterpretButton onRun={() => interpretExplanationQuality(applicationFeatures)} />
                 )}
               </CardContent>
             </Card>

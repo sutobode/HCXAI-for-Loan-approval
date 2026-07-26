@@ -4,6 +4,7 @@
  * call apiClient directly from a component.
  */
 import { apiClient } from "@/lib/api";
+import type { InterpretResult } from "@/components/ui/ai-interpret-button";
 import type {
   ApplicantDetail,
   CounterfactualResult,
@@ -210,6 +211,27 @@ export async function getGlobalExplainability(): Promise<GlobalExplainabilityRes
 
 export async function getExplanationQuality(application: LoanApplication): Promise<ExplanationQualityReport> {
   const { data } = await apiClient.post<ExplanationQualityReport>("/explain/quality", { application });
+  return data;
+}
+
+export async function interpretLime(application: LoanApplication): Promise<InterpretResult> {
+  const { data } = await apiClient.post<InterpretResult>("/explain/lime/interpret", { application });
+  return data;
+}
+
+export async function interpretExplanationQuality(application: LoanApplication): Promise<InterpretResult> {
+  const { data } = await apiClient.post<InterpretResult>("/explain/quality/interpret", { application });
+  return data;
+}
+
+export async function interpretCounterfactual(
+  application: LoanApplication,
+  n_results = 3
+): Promise<InterpretResult> {
+  const { data } = await apiClient.post<InterpretResult>("/explain/counterfactual/interpret", {
+    application,
+    n_results,
+  });
   return data;
 }
 
