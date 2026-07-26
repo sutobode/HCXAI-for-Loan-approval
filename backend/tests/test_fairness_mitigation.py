@@ -97,6 +97,35 @@ def test_cached_fairness_report_reuses_result(monkeypatch):
         fairness_module.invalidate_fairness_cache()
 
 
+def test_activate_model_endpoint_invalidates_fairness_cache(client_as_admin, monkeypatch):
+    """
+    POST /model/activate is the Champion-Challenger promote/rollback path --
+    distinct from training a brand new version via train_new_version(). It
+    switches which already-trained version is "active" without going through
+    train_new_version()'s own cache invalidation, so the endpoint itself must
+    invalidate the fairness cache (alongside its existing
+    get_explainer.cache_clear()) or a stale fairness report (computed against
+    the previously active model) would keep being served to /explain's
+    Task 14 review-trigger check after an admin activates a different version.
+    """
+    from app import fairness as fairness_module
+
+    # Ensure there is an active baseline version, then train a second
+    # ("challenger") version without activating it -- the typical
+    # Champion-Challenger setup this endpoint exists for.
+    if db.get_active_model_version() is None:
+        train_new_version(trained_by="pytest", notes="baseline for activate test")
+    challenger = train_new_version(trained_by="pytest", notes="challenger", activate=False)
+
+    # Simulate a fairness report already cached (e.g. from an earlier
+    # /explain call) for the previously active model, prior to the switch.
+    monkeypatch.setattr(fairness_module, "_cached_report", {"fake": "stale-before-activate"})
+
+    resp = client_as_admin.post("/model/activate", json={"version_label": challenger["version_label"]})
+    assert resp.status_code == 200
+    assert fairness_module._cached_report is None
+
+
 # /fairness/* endpoints run compute_fairness_report() against the active
 # Model Registry version. The `client` fixture (via client_as_risk_manager)
 # spins up a fresh, isolated SQLite DB per test with no active model version

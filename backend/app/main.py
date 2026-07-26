@@ -85,7 +85,7 @@ from .data_processing import encode_single_application
 from .deepseek_client import generate_narrative_explanation, interpret_technical_output
 from .explainer import get_explainer
 from .explanation_quality import compute_explanation_quality_report
-from .fairness import compute_fairness_report
+from .fairness import compute_fairness_report, invalidate_fairness_cache
 from .global_explainability import compute_global_importance
 from .lime_explainer import get_lime_explainer
 from .model_registry import compare_versions, list_available_algorithms, train_new_version
@@ -1004,6 +1004,7 @@ def activate_model(
         raise HTTPException(status_code=404, detail=str(exc)) from exc
 
     get_explainer.cache_clear()
+    invalidate_fairness_cache()
     db.log_audit_event(
         user_id=current_user["email"],
         action="model.activate",
