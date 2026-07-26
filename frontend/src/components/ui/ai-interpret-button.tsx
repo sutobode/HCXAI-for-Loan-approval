@@ -1,13 +1,13 @@
 "use client";
 
 import { useMutation } from "@tanstack/react-query";
-import { Sparkles } from "lucide-react";
+import { RefreshCw, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { getApiErrorMessage } from "@/lib/api";
 
-interface InterpretResult {
+export interface InterpretResult {
   narrative: string;
   model: string;
 }
@@ -30,13 +30,23 @@ export function AiInterpretButton({ onRun, label = "Diễn giải bằng AI" }: 
 
   if (mutation.data) {
     return (
-      <div className="flex items-start gap-2 rounded-lg border bg-primary/5 p-3">
+      <div className="flex items-start gap-2 rounded-lg border bg-primary/5 p-3" aria-live="polite">
         <Sparkles className="mt-0.5 size-4 shrink-0 text-primary" />
-        <div>
+        <div className="flex-1">
           <p className="text-sm leading-relaxed">{mutation.data.narrative}</p>
           {mutation.data.model === "template-fallback" && (
             <p className="mt-1 text-xs text-muted-foreground">(diễn giải mẫu — dịch vụ AI tạm thời không khả dụng)</p>
           )}
+          <Button
+            variant="ghost"
+            size="sm"
+            className="mt-2 h-auto p-0 text-xs text-muted-foreground hover:text-foreground"
+            disabled={mutation.isPending}
+            onClick={() => mutation.mutate()}
+          >
+            <RefreshCw className="size-3" />
+            Diễn giải lại
+          </Button>
         </div>
       </div>
     );
