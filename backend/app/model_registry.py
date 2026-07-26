@@ -36,6 +36,11 @@ from sklearn.metrics import (
     roc_curve,
 )
 from sklearn.calibration import calibration_curve
+from sklearn.ensemble import (
+    ExtraTreesClassifier,
+    GradientBoostingClassifier,
+    RandomForestClassifier,
+)
 from xgboost import XGBClassifier
 
 from . import db
@@ -54,13 +59,69 @@ DEFAULT_HYPERPARAMETERS = {
     "random_state": 42,
 }
 
+DEFAULT_RF_HYPERPARAMETERS = {
+    "n_estimators": 300,
+    "max_depth": 8,
+    "min_samples_leaf": 3,
+    "random_state": 42,
+    "n_jobs": -1,
+}
+DEFAULT_GB_HYPERPARAMETERS = {
+    "n_estimators": 150,
+    "max_depth": 3,
+    "learning_rate": 0.1,
+    "random_state": 42,
+}
+DEFAULT_ET_HYPERPARAMETERS = {
+    "n_estimators": 300,
+    "max_depth": 10,
+    "min_samples_leaf": 3,
+    "random_state": 42,
+    "n_jobs": -1,
+}
+
+MODEL_FACTORIES: dict[str, tuple[type, dict]] = {
+    "xgboost": (XGBClassifier, DEFAULT_HYPERPARAMETERS),
+    "random_forest": (RandomForestClassifier, DEFAULT_RF_HYPERPARAMETERS),
+    "gradient_boosting": (GradientBoostingClassifier, DEFAULT_GB_HYPERPARAMETERS),
+    "extra_trees": (ExtraTreesClassifier, DEFAULT_ET_HYPERPARAMETERS),
+}
+
+# LightGBM / CatBoost: best-effort registration. On a machine where Windows
+# Smart App Control (or an equivalent policy) blocks their compiled native
+# library, import raises OSError/ImportError -- catch broadly and simply
+# don't register the algorithm, rather than crashing the whole backend.
+try:
+    from lightgbm import LGBMClassifier
+
+    MODEL_FACTORIES["lightgbm"] = (
+        LGBMClassifier,
+        {"n_estimators": 200, "max_depth": 6, "learning_rate": 0.1, "random_state": 42, "verbosity": -1},
+    )
+except Exception:
+    logger.warning("LightGBM unavailable (import failed) -- omitted from available algorithms.")
+
+try:
+    from catboost import CatBoostClassifier
+
+    MODEL_FACTORIES["catboost"] = (
+        CatBoostClassifier,
+        {"iterations": 200, "depth": 6, "learning_rate": 0.1, "random_state": 42, "verbose": False},
+    )
+except Exception:
+    logger.warning("CatBoost unavailable (import failed) -- omitted from available algorithms.")
+
+
+def list_available_algorithms() -> list[str]:
+    return sorted(MODEL_FACTORIES.keys())
+
 
 def _next_version_label() -> str:
     versions = db.list_model_versions()
     return f"v{len(versions) + 1}"
 
 
-def _compute_rich_metrics(model: XGBClassifier, X_test, y_test) -> dict[str, Any]:
+def _compute_rich_metrics(model: Any, X_test, y_test) -> dict[str, Any]:
     """Full evaluation suite: point metrics + curves for dashboards."""
     y_pred = model.predict(X_test)
     y_proba = model.predict_proba(X_test)[:, 1]
@@ -109,17 +170,27 @@ def train_new_version(
     trained_by: str = "system",
     notes: str | None = None,
     activate: bool = True,
+    algorithm: str = "xgboost",
 ) -> dict[str, Any]:
     """
     Train a new model version end-to-end: fit, evaluate, persist versioned
     artifacts, register in the Model Registry, and (by default) activate it
     as the new champion.
     """
-    hyperparameters = hyperparameters or DEFAULT_HYPERPARAMETERS
+    if algorithm not in MODEL_FACTORIES:
+        raise ValueError(
+            f"Unknown or unavailable algorithm '{algorithm}'. "
+            f"Available: {list_available_algorithms()}"
+        )
+    model_class, default_hyperparameters = MODEL_FACTORIES[algorithm]
+    hyperparameters = hyperparameters or default_hyperparameters
     dataset = prepare_dataset()
 
-    model = XGBClassifier(**hyperparameters)
-    logger.info("Training XGBoost classifier (version=%s) on %d samples", _next_version_label(), len(dataset.X_train))
+    model = model_class(**hyperparameters)
+    logger.info(
+        "Training %s classifier (version=%s) on %d samples",
+        algorithm, _next_version_label(), len(dataset.X_train),
+    )
     model.fit(dataset.X_train, dataset.y_train)
 
     metrics = _compute_rich_metrics(model, dataset.X_test, dataset.y_test)
@@ -133,14 +204,14 @@ def train_new_version(
     joblib.dump(dataset.encoders, version_dir / "encoders.joblib")
     (version_dir / "metadata.json").write_text(
         json.dumps(
-            {"feature_columns": FEATURE_COLUMNS, "model_type": "XGBClassifier", "metrics": metrics},
+            {"feature_columns": FEATURE_COLUMNS, "model_type": algorithm, "metrics": metrics},
             indent=2,
         )
     )
 
     record = db.create_model_version(
         version_label=version_label,
-        algorithm="XGBClassifier",
+        algorithm=algorithm,
         hyperparameters=hyperparameters,
         metrics=metrics,
         artifact_dir=str(version_dir.relative_to(settings.MODEL_DIR)),
@@ -157,10 +228,10 @@ def train_new_version(
         action="model.train",
         resource_type="model_version",
         resource_id=version_label,
-        details={"metrics": {k: v for k, v in metrics.items() if k in ("accuracy", "f1_score", "auc")}},
+        details={"algorithm": algorithm, "metrics": {k: v for k, v in metrics.items() if k in ("accuracy", "f1_score", "auc")}},
     )
 
-    logger.info("Registered model version %s (active=%s)", version_label, activate)
+    logger.info("Registered model version %s (algorithm=%s, active=%s)", version_label, algorithm, activate)
     return record
 
 

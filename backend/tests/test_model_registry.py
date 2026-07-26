@@ -42,7 +42,7 @@ def test_train_new_version_creates_registry_entry(registry_env):
 
     assert result["version_label"] == "v1"
     assert result["is_active"] is True
-    assert result["algorithm"] == "XGBClassifier"
+    assert result["algorithm"] == "xgboost"
     assert 0.0 <= result["metrics"]["accuracy"] <= 1.0
     assert "confusion_matrix" in result["metrics"]
     assert "roc_curve" in result["metrics"]
@@ -92,3 +92,21 @@ def test_get_active_version_artifacts_loads_model_and_encoders(registry_env):
     assert model is not None
     assert isinstance(encoders, dict)
     assert version["version_label"] == "v2"
+
+
+def test_list_available_algorithms_includes_sklearn_and_xgboost(registry_env):
+    registry_module, _ = registry_env
+    algos = registry_module.list_available_algorithms()
+    assert "xgboost" in algos
+    assert "random_forest" in algos
+    assert "gradient_boosting" in algos
+    assert "extra_trees" in algos
+
+
+def test_train_new_version_with_random_forest(registry_env):
+    registry_module, db_module = registry_env
+    record = registry_module.train_new_version(
+        trained_by="test", algorithm="random_forest", activate=False
+    )
+    assert record["algorithm"] == "random_forest"
+    assert 0.0 <= record["metrics"]["accuracy"] <= 1.0
