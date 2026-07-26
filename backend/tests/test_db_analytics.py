@@ -154,3 +154,15 @@ def test_decision_provenance_includes_application_model_version_and_feedback(db_
 def test_decision_provenance_returns_none_for_missing_prediction(db_env):
     db_module = db_env
     assert db_module.get_decision_provenance(99999) is None
+
+
+def test_trust_interpret_endpoint(client_as_loan_officer):
+    resp = client_as_loan_officer.get("/trust/test_user/interpret")
+    assert resp.status_code == 200
+    assert "narrative" in resp.json()
+
+
+def test_override_analysis_interpret_endpoint(client_as_risk_manager):
+    resp = client_as_risk_manager.get("/hcxai/override-analysis/interpret")
+    assert resp.status_code == 200
+    assert "narrative" in resp.json()

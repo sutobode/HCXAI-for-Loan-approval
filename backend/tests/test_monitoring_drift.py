@@ -60,3 +60,9 @@ def test_prediction_drift_detected_for_shifted_distribution(monitoring_env):
     assert result["status"] == "ok"
     assert result["drift_detected"] is True
     assert result["recent_window_mean"] > result["prior_window_mean"]
+
+
+def test_monitoring_interpret_endpoint(client_as_risk_manager):
+    resp = client_as_risk_manager.post("/monitoring/interpret")
+    assert resp.status_code == 200
+    assert "narrative" in resp.json()

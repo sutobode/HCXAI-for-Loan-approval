@@ -519,6 +519,31 @@ def trust_dashboard(user_id: str, current_user: dict = Depends(auth.require_auth
     return hcxai.get_trust_dashboard(user_id)
 
 
+@app.get("/trust/{user_id}/interpret")
+def trust_dashboard_interpret(
+    user_id: str,
+    current_user: dict = Depends(auth.require_authenticated),
+):
+    """LLM diễn giải hồ sơ cân chỉnh độ tin cậy (trust calibration) của một người dùng."""
+    dashboard = hcxai.get_trust_dashboard(user_id)
+    calibration = dashboard["trust_calibration"]
+    trend = dashboard["trust_trend"]
+
+    data_summary = (
+        f"trust_state={calibration.get('trust_state')}, agreement_rate={calibration.get('agreement_rate')}, "
+        f"events={calibration.get('events')}, trend={trend.get('trend')}, "
+        f"recent_agreement_rate={trend.get('recent_agreement_rate')}, "
+        f"prior_agreement_rate={trend.get('prior_agreement_rate')}"
+    )
+    return interpret_technical_output(
+        instruction=(
+            "Diễn giải hồ sơ cân chỉnh độ tin cậy của một người dùng thành 2-3 câu nhận xét "
+            "tự nhiên, gần gũi (ví dụ xu hướng tin AI quá mức hay đang cải thiện)."
+        ),
+        data_summary=data_summary,
+    )
+
+
 @app.get("/feedback/analytics")
 def feedback_analytics(
     current_user: dict = Depends(auth.require_roles("admin", "risk_manager")),
@@ -621,6 +646,32 @@ def monitoring_snapshot(
     snapshot = get_monitoring_snapshot()
     db.log_audit_event(user_id=current_user["email"], action="monitoring.snapshot")
     return snapshot
+
+
+@app.post("/monitoring/interpret")
+def monitoring_interpret(
+    current_user: dict = Depends(auth.require_roles("admin", "risk_manager")),
+):
+    """LLM diễn giải báo cáo giám sát mô hình (feature drift + prediction drift)."""
+    snapshot = get_monitoring_snapshot()
+    drift = snapshot["drift_report"]
+    pred_drift = snapshot["prediction_drift"]
+
+    lines = [f"Số dự đoán đã xử lý: {snapshot['n_predictions_served']}"]
+    if drift.get("status") == "ok":
+        lines.append(f"Feature drift: {'phát hiện' if drift['overall_drift_detected'] else 'không phát hiện'}, "
+                      f"các yếu tố lệch: {drift.get('drifted_features') or 'không có'}")
+    if pred_drift.get("status") == "ok":
+        lines.append(f"Prediction drift: {'phát hiện' if pred_drift['drift_detected'] else 'không phát hiện'}, "
+                      f"ks_statistic={pred_drift['ks_statistic']}, p_value={pred_drift['p_value']}")
+
+    return interpret_technical_output(
+        instruction=(
+            "Diễn giải báo cáo giám sát mô hình (feature drift, prediction drift) cho cán bộ "
+            "quản lý rủi ro — họ cần biết có nên lo ngại và có nên huấn luyện lại mô hình không."
+        ),
+        data_summary="\n".join(lines),
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -771,6 +822,31 @@ def override_analysis(
         "by_confidence": db.get_override_analysis_by_confidence(user_id),
         "direction": db.get_override_direction_stats(user_id) if user_id else None,
     }
+
+
+@app.get("/hcxai/override-analysis/interpret")
+def override_analysis_interpret(
+    user_id: str | None = None,
+    current_user: dict = Depends(auth.require_roles("admin", "risk_manager")),
+):
+    """LLM diễn giải bảng phân tích ghi đè (disagreement rate theo độ tin cậy AI)."""
+    by_confidence = db.get_override_analysis_by_confidence(user_id)
+    buckets = by_confidence["buckets"]
+    direction = db.get_override_direction_stats(user_id) if user_id else None
+
+    lines = [f"- {b['confidence_range']}: {b['n_events']} sự kiện, disagreement_rate={b['disagreement_rate']}" for b in buckets]
+    lines.append(f"well_calibrated_pattern={by_confidence.get('well_calibrated_pattern')}")
+    if direction:
+        lines.append(f"risk_tolerance={direction.get('risk_tolerance')}")
+
+    return interpret_technical_output(
+        instruction=(
+            "Diễn giải bảng phân tích ghi đè (disagreement rate theo độ tin cậy AI) cho cán bộ "
+            "quản lý rủi ro — mô hình có đang được calibrate tốt không (disagreement rate nên "
+            "giảm dần khi độ tin cậy AI tăng)."
+        ),
+        data_summary="\n".join(lines),
+    )
 
 
 @app.get("/hcxai/satisfaction")
