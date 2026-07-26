@@ -228,6 +228,7 @@ class CreateApplicantRequest(BaseModel):
 class TrainModelRequest(BaseModel):
     notes: str | None = None
     activate: bool = True
+    algorithm: str = "xgboost"
 
 
 class ActivateModelRequest(BaseModel):

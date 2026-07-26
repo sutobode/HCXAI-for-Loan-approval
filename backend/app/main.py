@@ -86,7 +86,7 @@ from .explanation_quality import compute_explanation_quality_report
 from .fairness import compute_fairness_report
 from .global_explainability import compute_global_importance
 from .lime_explainer import get_lime_explainer
-from .model_registry import compare_versions, train_new_version
+from .model_registry import compare_versions, list_available_algorithms, train_new_version
 from .monitoring import get_monitoring_snapshot
 from .schemas import (
     ActivateModelRequest,
@@ -752,6 +752,14 @@ def get_active_model_version(current_user: dict = Depends(auth.require_authentic
     return version
 
 
+@app.get("/model/train/algorithms")
+def list_training_algorithms(
+    current_user: dict = Depends(auth.require_roles("admin", "risk_manager")),
+):
+    """Danh sách thuật toán khả dụng để train (loại trừ những thuật toán bị chặn import, vd LightGBM/CatBoost trên máy có Smart App Control)."""
+    return {"algorithms": list_available_algorithms()}
+
+
 @app.post("/model/train", status_code=201)
 def train_model(
     request: TrainModelRequest,
@@ -762,8 +770,19 @@ def train_model(
     Admin-only -- this retrains on the full current dataset and, by default,
     activates the new version as the champion.
     """
+    if request.algorithm not in list_available_algorithms():
+        raise HTTPException(
+            status_code=400,
+            detail=f"Thuật toán '{request.algorithm}' không khả dụng. "
+            f"Danh sách hợp lệ: {list_available_algorithms()}",
+        )
     get_explainer.cache_clear()  # invalidate the singleton so the next request picks up the new champion
-    result = train_new_version(trained_by=current_user["email"], notes=request.notes, activate=request.activate)
+    result = train_new_version(
+        trained_by=current_user["email"],
+        notes=request.notes,
+        activate=request.activate,
+        algorithm=request.algorithm,
+    )
     return result
 
 
