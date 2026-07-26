@@ -150,6 +150,17 @@ export async function flagPredictionForReview(predictionId: number): Promise<voi
   await apiClient.post(`/predictions/${predictionId}/flag-for-review`);
 }
 
+export async function askAboutPrediction(
+  predictionId: number,
+  question: string
+): Promise<{ answer: string; model: string }> {
+  const { data } = await apiClient.post<{ answer: string; model: string }>(
+    `/predictions/${predictionId}/ask`,
+    { question }
+  );
+  return data;
+}
+
 // --------------------------------------------------------------------------
 // Feedback / Trust (HCXAI)
 // --------------------------------------------------------------------------

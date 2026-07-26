@@ -19,6 +19,7 @@ import { RiskGauge } from "@/components/charts/risk-gauge";
 import { ShapChart } from "@/components/charts/shap-chart";
 import { AiInterpretButton } from "@/components/ui/ai-interpret-button";
 import {
+  askAboutPrediction,
   explainWithCounterfactual,
   explainWithLime,
   flagPredictionForReview,
@@ -50,6 +51,8 @@ export default function ApplicationDetailPage() {
 
   const [feedbackComment, setFeedbackComment] = useState("");
   const [trustRating, setTrustRating] = useState(0);
+  const [question, setQuestion] = useState("");
+  const [chatHistory, setChatHistory] = useState<{ question: string; answer: string }[]>([]);
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ["prediction", id],
@@ -88,6 +91,15 @@ export default function ApplicationDetailPage() {
       queryClient.invalidateQueries({ queryKey: ["prediction", id] });
     },
     onError: (error) => toast.error(getApiErrorMessage(error, "Gắn cờ thất bại")),
+  });
+
+  const askMutation = useMutation({
+    mutationFn: (q: string) => askAboutPrediction(id, q),
+    onSuccess: (result, q) => {
+      setChatHistory((prev) => [...prev, { question: q, answer: result.answer }]);
+      setQuestion("");
+    },
+    onError: (error) => toast.error(getApiErrorMessage(error, "Không thể trả lời câu hỏi")),
   });
 
   if (isLoading) {
@@ -360,6 +372,42 @@ export default function ApplicationDetailPage() {
           </div>
         </CollapsibleContent>
       </Collapsible>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <MessageSquare className="size-4 text-primary" />
+            Hỏi thêm về giải thích này
+          </CardTitle>
+          <CardDescription>
+            Câu trả lời chỉ dựa trên dữ liệu SHAP/narrative của chính hồ sơ này — không suy đoán ngoài phạm vi.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {chatHistory.map((entry, i) => (
+            <div key={i} className="space-y-1">
+              <p className="text-sm font-medium">Bạn: {entry.question}</p>
+              <p className="text-sm text-muted-foreground">AI: {entry.answer}</p>
+            </div>
+          ))}
+          <div className="flex gap-2">
+            <Input
+              placeholder="Vì sao thu nhập không giúp nhiều hơn?"
+              value={question}
+              onChange={(e) => setQuestion(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && question.trim()) askMutation.mutate(question.trim());
+              }}
+            />
+            <Button
+              disabled={!question.trim() || askMutation.isPending}
+              onClick={() => askMutation.mutate(question.trim())}
+            >
+              {askMutation.isPending ? "Đang trả lời..." : "Hỏi"}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>
