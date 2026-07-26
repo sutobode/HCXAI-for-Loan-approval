@@ -95,9 +95,36 @@ def loan_officer_token(client, admin_token):
 
 
 @pytest.fixture()
+def risk_manager_token(client, admin_token):
+    """Get JWT token for a risk_manager user created by admin."""
+    headers = {"Authorization": f"Bearer {admin_token}"}
+    client.post(
+        "/auth/register",
+        json={
+            "email": "riskmanager@test.local",
+            "full_name": "Risk Manager",
+            "password": "RiskManager123!",
+            "role": "risk_manager",
+        },
+        headers=headers,
+    )
+    login_resp = client.post(
+        "/auth/login", json={"email": "riskmanager@test.local", "password": "RiskManager123!"}
+    )
+    return login_resp.json()["access_token"]
+
+
+@pytest.fixture()
 def client_as_admin(client, admin_token):
     """TestClient with admin authorization header."""
     client.headers.update({"Authorization": f"Bearer {admin_token}"})
+    return client
+
+
+@pytest.fixture()
+def client_as_risk_manager(client, risk_manager_token):
+    """TestClient with risk_manager authorization header."""
+    client.headers.update({"Authorization": f"Bearer {risk_manager_token}"})
     return client
 
 

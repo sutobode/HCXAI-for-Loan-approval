@@ -40,7 +40,9 @@ HCXAI (Human-Centered XAI Center):
 
 Fairness & Responsible AI:
 - GET  /fairness/report                       Demographic parity + four-fifths rule check
-- GET  /fairness/mitigation-recommendations   Bias mitigation threshold recommendations (admin/risk_manager)
+- POST /fairness/interpret                    AI narrative interpretation of the fairness report (admin/risk_manager)
+- GET  /fairness/mitigation-recommendations   Bias mitigation threshold recommendations (admin/risk_manager;
+                                               ?elaborate=true adds an LLM detailed write-up per recommendation)
 
 Model Monitoring:
 - GET  /monitoring/snapshot        Training metrics + feature drift + prediction drift
@@ -587,6 +589,30 @@ def fairness_report(
     return report
 
 
+@app.post("/fairness/interpret")
+def fairness_interpret(
+    current_user: dict = Depends(auth.require_roles("admin", "risk_manager")),
+):
+    explainer = _get_explainer_or_503()
+    report = compute_fairness_report(explainer)
+
+    lines = [f"Tỷ lệ duyệt tổng thể theo dự đoán: {report['overall_approval_rate_predicted']:.0%}"]
+    for attribute, res in report["by_attribute"].items():
+        lines.append(
+            f"- {attribute}: parity_ratio (mô hình)={res['parity_ratio']}, "
+            f"parity_ratio (nhãn gốc)={res['label_parity_ratio']}, "
+            f"đạt Four-Fifths Rule={res['passes_four_fifths_rule']}"
+        )
+    return interpret_technical_output(
+        instruction=(
+            "Diễn giải báo cáo công bằng (demographic parity, Four-Fifths Rule) cho một "
+            "cán bộ quản lý rủi ro — họ cần biết mô hình có đang công bằng không, và có "
+            "đang khuếch đại thêm bias vốn có trong dữ liệu hay không."
+        ),
+        data_summary="\n".join(lines),
+    )
+
+
 @app.get("/monitoring/snapshot")
 def monitoring_snapshot(
     current_user: dict = Depends(auth.require_roles("admin", "risk_manager")),
@@ -795,17 +821,45 @@ def decision_provenance(
 
 @app.get("/fairness/mitigation-recommendations")
 def fairness_mitigation_recommendations(
+    elaborate: bool = False,
     current_user: dict = Depends(auth.require_roles("admin", "risk_manager")),
 ):
     """
     Bias Mitigation: threshold-adjustment recommendations for any attribute
     failing the four-fifths rule. Recommendations only -- no automatic
     changes are applied (see app/fairness.py::generate_mitigation_recommendations).
+
+    When `elaborate=true`, each recommendation also gets an LLM-generated
+    `llm_detailed_writeup` (a longer, compliance-oriented explanation). When
+    omitted/false (the default, preserving prior behavior for existing
+    callers), that field is present but null.
     """
     explainer = _get_explainer_or_503()
     report = compute_fairness_report(explainer)
     db.log_audit_event(user_id=current_user["email"], action="fairness.mitigation_recommendations")
-    return report["mitigation_recommendations"]
+
+    recommendations = report["mitigation_recommendations"]
+    if elaborate:
+        for rec in recommendations:
+            result = interpret_technical_output(
+                instruction=(
+                    "Soạn một đoạn văn bản chi tiết hơn (4-6 câu), mang tính compliance/tuân "
+                    "thủ, giải thích vì sao cần điều chỉnh ngưỡng cho thuộc tính này, dựa "
+                    "đúng trên số liệu đã cho — không tự thêm số liệu mới."
+                ),
+                data_summary=(
+                    f"attribute={rec['attribute']}, advantaged_group={rec['advantaged_group']}, "
+                    f"disadvantaged_group={rec['disadvantaged_group']}, "
+                    f"approval_rate_gap={rec['approval_rate_gap']}"
+                ),
+                max_tokens=300,
+            )
+            rec["llm_detailed_writeup"] = result["narrative"]
+    else:
+        for rec in recommendations:
+            rec["llm_detailed_writeup"] = None
+
+    return recommendations
 
 
 # ---------------------------------------------------------------------------

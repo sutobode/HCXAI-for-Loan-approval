@@ -1,5 +1,7 @@
 """Tests for Bias Mitigation recommendations (backend/app/fairness.py)."""
+from app import db
 from app.fairness import generate_mitigation_recommendations
+from app.model_registry import train_new_version
 
 
 def test_no_recommendations_when_all_attributes_pass():
@@ -54,3 +56,79 @@ def test_multiple_failing_attributes_each_get_a_recommendation():
     }
     recs = generate_mitigation_recommendations(by_attribute)
     assert {r["attribute"] for r in recs} == {"education", "self_employed"}
+
+
+# /fairness/* endpoints run compute_fairness_report() against the active
+# Model Registry version. The `client` fixture (via client_as_risk_manager)
+# spins up a fresh, isolated SQLite DB per test with no active model version
+# yet, so an active version must be trained first -- same pattern used by
+# tests/test_xai_modules.py's `_ensure_active_model` for the /explain/*
+# interpret endpoints.
+def _ensure_active_model():
+    if db.get_active_model_version() is None:
+        train_new_version(trained_by="pytest", notes="auto-trained by test_fairness_mitigation.py")
+
+
+def test_fairness_interpret_endpoint(client_as_risk_manager):
+    _ensure_active_model()
+    resp = client_as_risk_manager.post("/fairness/interpret")
+    assert resp.status_code == 200
+    assert "narrative" in resp.json()
+
+
+def test_mitigation_recommendations_with_elaborate_flag(client_as_risk_manager):
+    _ensure_active_model()
+    resp = client_as_risk_manager.get("/fairness/mitigation-recommendations?elaborate=true")
+    assert resp.status_code == 200
+    body = resp.json()
+    for rec in body:
+        assert "llm_detailed_writeup" in rec
+
+
+_FAKE_REPORT_WITH_RECOMMENDATION = {
+    "mitigation_recommendations": [
+        {
+            "attribute": "education",
+            "advantaged_group": "Graduate",
+            "disadvantaged_group": "Not Graduate",
+            "approval_rate_gap": 0.4,
+            "requires_human_approval": True,
+            "recommendation": "Escalate to a compliance officer for threshold review.",
+        }
+    ]
+}
+
+
+def test_mitigation_recommendations_default_has_null_writeup(client_as_risk_manager, monkeypatch):
+    """
+    The real held-out dataset currently passes the four-fifths rule for both
+    tracked attributes (no recommendations at all), so this monkeypatches
+    compute_fairness_report to force a non-empty recommendation and verifies
+    the *existing* (non-elaborate) behavior is preserved: the recommendation
+    fields are unchanged, and the new llm_detailed_writeup field is present
+    but null when elaborate is not requested.
+    """
+    _ensure_active_model()
+    monkeypatch.setattr("app.main.compute_fairness_report", lambda explainer: _FAKE_REPORT_WITH_RECOMMENDATION)
+
+    resp = client_as_risk_manager.get("/fairness/mitigation-recommendations")
+    assert resp.status_code == 200
+    body = resp.json()
+    assert len(body) == 1
+    rec = body[0]
+    assert rec["attribute"] == "education"
+    assert rec["recommendation"] == "Escalate to a compliance officer for threshold review."
+    assert rec["llm_detailed_writeup"] is None
+
+
+def test_mitigation_recommendations_elaborate_true_populates_writeup(client_as_risk_manager, monkeypatch):
+    _ensure_active_model()
+    monkeypatch.setattr("app.main.compute_fairness_report", lambda explainer: _FAKE_REPORT_WITH_RECOMMENDATION)
+
+    resp = client_as_risk_manager.get("/fairness/mitigation-recommendations?elaborate=true")
+    assert resp.status_code == 200
+    body = resp.json()
+    assert len(body) == 1
+    writeup = body[0]["llm_detailed_writeup"]
+    assert isinstance(writeup, str)
+    assert len(writeup) > 0
