@@ -171,6 +171,19 @@ def _run_lightweight_migrations(conn: sqlite3.Connection) -> None:
     if "applicant_id" not in existing_app_columns:
         conn.execute("ALTER TABLE applications ADD COLUMN applicant_id INTEGER REFERENCES applicants(id)")
 
+    existing_pred_columns = {row[1] for row in conn.execute("PRAGMA table_info(predictions)").fetchall()}
+    review_columns = {
+        "needs_review": "INTEGER NOT NULL DEFAULT 0",
+        "review_reasons": "TEXT",
+        "reviewed_by": "TEXT",
+        "reviewed_at": "TEXT",
+        "review_decision": "TEXT",
+        "review_note": "TEXT",
+    }
+    for col, col_type in review_columns.items():
+        if col not in existing_pred_columns:
+            conn.execute(f"ALTER TABLE predictions ADD COLUMN {col} {col_type}")
+
 
 def init_db(db_path: Path | None = None) -> None:
     path = db_path or settings.SQLITE_PATH

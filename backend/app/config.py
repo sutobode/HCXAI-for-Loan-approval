@@ -46,6 +46,11 @@ class Settings:
     # this-value-times-retries.
     DEEPSEEK_TIMEOUT_SECONDS: float = float(os.getenv("DEEPSEEK_TIMEOUT_SECONDS", "8"))
 
+    # Human-in-the-loop: Review Queue trigger thresholds (ngưỡng nghiệp vụ,
+    # chỉnh qua .env, không hardcode trong logic).
+    REVIEW_CONFIDENCE_THRESHOLD: float = float(os.getenv("REVIEW_CONFIDENCE_THRESHOLD", "0.75"))
+    REVIEW_LOAN_AMOUNT_THRESHOLD: float = float(os.getenv("REVIEW_LOAN_AMOUNT_THRESHOLD", "30000000"))
+
     # API
     API_TITLE: str = "HCXAI Loan Approval Backend"
     API_VERSION: str = "0.1.0"

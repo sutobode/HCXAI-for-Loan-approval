@@ -166,3 +166,19 @@ def test_override_analysis_interpret_endpoint(client_as_risk_manager):
     resp = client_as_risk_manager.get("/hcxai/override-analysis/interpret")
     assert resp.status_code == 200
     assert "narrative" in resp.json()
+
+
+def test_predictions_table_has_review_columns(tmp_path, monkeypatch):
+    import importlib
+    from app import config as config_module
+
+    monkeypatch.setenv("SQLITE_PATH", str(tmp_path / "review_test.db"))
+    importlib.reload(config_module)
+    from app import db as db_module
+
+    importlib.reload(db_module)
+    db_module.init_db()
+
+    with db_module.get_connection() as conn:
+        columns = {row[1] for row in conn.execute("PRAGMA table_info(predictions)").fetchall()}
+    assert {"needs_review", "review_reasons", "reviewed_by", "reviewed_at", "review_decision", "review_note"} <= columns
