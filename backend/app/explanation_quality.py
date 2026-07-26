@@ -141,9 +141,16 @@ def compute_explanation_quality_report(
     completeness = verify_completeness(shap_result, margin_output)
     sparsity = compute_sparsity_score(shap_result)
 
-    # Composite score: equally weight the three normalized sub-scores (0-1)
+    # Composite score: equally weight the three normalized sub-scores (0-1).
+    # stability_score is a Spearman correlation in [-1, 1] (see
+    # compute_stability_score), so it must be rescaled to [0, 1] before being
+    # averaged with completeness/sparsity, which are already on that scale.
+    if stability["stability_score"] is not None:
+        normalized_stability = (stability["stability_score"] + 1) / 2
+    else:
+        normalized_stability = 0.5
     sub_scores = [
-        stability["stability_score"] if stability["stability_score"] is not None else 0.5,
+        normalized_stability,
         1.0 if completeness["is_complete"] else 0.0,
         sparsity["concentration_ratio"],
     ]

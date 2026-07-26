@@ -116,7 +116,7 @@ export default function FairnessPage() {
           <div className="grid gap-4 sm:grid-cols-3">
             <Card>
               <CardContent className="p-5">
-                <p className="text-sm text-muted-foreground">Số mẫu phân tích</p>
+                <p className="text-sm text-muted-foreground">Số mẫu phân tích (tập test, chưa từng dùng để train)</p>
                 <p className="mt-1 font-heading text-2xl font-semibold">{data.n_samples.toLocaleString()}</p>
               </CardContent>
             </Card>
@@ -151,12 +151,33 @@ export default function FairnessPage() {
                       {result.passes_four_fifths_rule ? "Đạt" : "Không đạt"} <GlossaryTerm term="Four-Fifths Rule" />
                     </Badge>
                   </CardTitle>
-                  <CardDescription>
-                    Parity Ratio: {result.parity_ratio !== null ? result.parity_ratio.toFixed(3) : "—"}
+                  <CardDescription className="space-y-1">
+                    <span className="block">
+                      Parity Ratio (mô hình): {result.parity_ratio !== null ? result.parity_ratio.toFixed(3) : "—"}
+                      {" · "}
+                      Parity Ratio (nhãn gốc): {result.label_parity_ratio !== null ? result.label_parity_ratio.toFixed(3) : "—"}
+                    </span>
                   </CardDescription>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="space-y-3">
                   <GroupBarChart result={result} />
+                  {result.model_vs_label_parity_delta !== null && (
+                    <p className="text-sm text-muted-foreground">
+                      {result.model_vs_label_parity_delta > 0.01 ? (
+                        <>
+                          Mô hình đang <span className="font-medium text-foreground">thu hẹp</span> khoảng cách công
+                          bằng so với dữ liệu gốc (chênh lệch parity: +{result.model_vs_label_parity_delta.toFixed(3)}).
+                        </>
+                      ) : result.model_vs_label_parity_delta < -0.01 ? (
+                        <>
+                          Mô hình đang <span className="font-medium text-destructive">khuếch đại thêm</span> thiên
+                          lệch vốn có trong dữ liệu gốc (chênh lệch parity: {result.model_vs_label_parity_delta.toFixed(3)}).
+                        </>
+                      ) : (
+                        "Mô hình phản ánh gần đúng mức công bằng vốn có trong dữ liệu gốc (không khuếch đại thêm)."
+                      )}
+                    </p>
+                  )}
                 </CardContent>
               </Card>
             ))}

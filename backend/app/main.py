@@ -349,7 +349,12 @@ def explain(
     progressive = hcxai.build_progressive_explanation(
         prediction, shap_result, narrative_result["narrative"], strategy.detail_level
     )
-    user_profile = db.get_or_create_user_profile(request.user_id, role=request.role)
+    # NOTE: request.role is the narrative *tone* selector (customer/loan_officer/
+    # risk_analyst/executive) for generate_narrative_explanation() above, not
+    # this account's RBAC role -- the two happen to share a field name but are
+    # unrelated concepts. The cognitive profile's "role" should reflect the
+    # actual signed-in account, so it uses current_user["role"] instead.
+    user_profile = db.get_or_create_user_profile(request.user_id, role=current_user["role"])
 
     return HCXAIExplanationResponse(
         prediction=PredictionResponse(**prediction),
@@ -359,6 +364,7 @@ def explain(
         narrative_model=narrative_result["model"],
         prediction_id=prediction_id,
         application_id=application_id,
+        model_version=explainer.version_label,
         progressive=progressive,
         user_profile=user_profile,
         explanation_strategy={

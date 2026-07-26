@@ -16,7 +16,7 @@ from typing import Any
 import pandas as pd
 
 from .config import settings
-from .data_processing import load_raw_dataframe
+from .data_processing import FEATURE_COLUMNS, load_raw_dataframe, prepare_dataset
 from .explainer import LoanExplainer
 
 FOUR_FIFTHS_THRESHOLD = 0.8
@@ -40,32 +40,52 @@ def _approval_rates_by_group(df: pd.DataFrame, group_col: str, predicted_col: st
 
 def compute_fairness_report(explainer: LoanExplainer) -> dict[str, Any]:
     """
-    Re-run the trained model over the full raw dataset and compute demographic
-    parity metrics grouped by education and self-employed status.
+    Re-run the trained model over the held-out test split (never seen during
+    training -- consistent with how model_registry._compute_rich_metrics
+    evaluates accuracy/AUC/etc.) and compute demographic parity metrics
+    grouped by education and self-employed status.
+
+    Evaluating on the full dataset (including the ~80% the model was
+    trained on) would let the model "look" fairer/more accurate than it
+    would generalize to be, since it has memorized most of those rows.
     """
-    from .data_processing import FEATURE_COLUMNS, encode_features
+    dataset = prepare_dataset()
+    test_raw = load_raw_dataframe().loc[dataset.X_test.index].reset_index(drop=True)
+    X_test = dataset.X_test.reset_index(drop=True)
 
-    raw_df = load_raw_dataframe()
-    encoded_df, _ = encode_features(raw_df[FEATURE_COLUMNS], encoders=explainer.encoders)
-
-    probabilities = explainer.model.predict_proba(encoded_df[FEATURE_COLUMNS])[:, 1]
+    probabilities = explainer.model.predict_proba(X_test[FEATURE_COLUMNS])[:, 1]
     predicted_approved = (probabilities >= 0.5).astype(int)
 
-    analysis_df = raw_df.copy()
+    analysis_df = test_raw.copy()
     analysis_df["predicted_approved"] = predicted_approved
-    analysis_df["actual_approved"] = (raw_df["loan_status"] == "Approved").astype(int)
+    analysis_df["actual_approved"] = (test_raw["loan_status"] == "Approved").astype(int)
 
     report: dict[str, Any] = {
         "n_samples": len(analysis_df),
+        "evaluated_on": "held_out_test_split",
         "overall_approval_rate_predicted": round(float(predicted_approved.mean()), 4),
         "overall_approval_rate_actual": round(float(analysis_df["actual_approved"].mean()), 4),
         "by_attribute": {},
     }
 
     for attribute in ("education", "self_employed"):
-        report["by_attribute"][attribute] = _approval_rates_by_group(
-            analysis_df, attribute, "predicted_approved"
-        )
+        predicted_stats = _approval_rates_by_group(analysis_df, attribute, "predicted_approved")
+        label_stats = _approval_rates_by_group(analysis_df, attribute, "actual_approved")
+
+        # Does the model's decision parity match, narrow, or widen the parity
+        # gap that was already present in the original labels? A negative
+        # delta means the model is *less* fair than the historical data it
+        # was trained on (it amplified an existing bias); positive means the
+        # model narrowed it.
+        predicted_stats["label_parity_ratio"] = label_stats["parity_ratio"]
+        if predicted_stats["parity_ratio"] is not None and label_stats["parity_ratio"] is not None:
+            predicted_stats["model_vs_label_parity_delta"] = round(
+                predicted_stats["parity_ratio"] - label_stats["parity_ratio"], 4
+            )
+        else:
+            predicted_stats["model_vs_label_parity_delta"] = None
+
+        report["by_attribute"][attribute] = predicted_stats
 
     violations = [
         attr

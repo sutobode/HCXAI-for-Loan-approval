@@ -84,6 +84,7 @@ export interface ExplanationResult {
   narrative_model: string;
   prediction_id: number;
   application_id: number;
+  model_version: string;
   progressive: ProgressiveExplanation;
   user_profile: UserProfile;
 }
@@ -150,10 +151,13 @@ export interface FairnessGroupResult {
   sample_size_by_group: Record<string, number>;
   parity_ratio: number | null;
   passes_four_fifths_rule: boolean | null;
+  label_parity_ratio: number | null;
+  model_vs_label_parity_delta: number | null;
 }
 
 export interface FairnessReport {
   n_samples: number;
+  evaluated_on: string;
   overall_approval_rate_predicted: number;
   overall_approval_rate_actual: number;
   by_attribute: Record<string, FairnessGroupResult>;
@@ -215,6 +219,7 @@ export interface PredictionRecord {
   confidence: number;
   narrative?: string | null;
   narrative_model?: string | null;
+  model_version?: string | null;
   applicant_id?: number | null;
   applicant_name?: string | null;
 }

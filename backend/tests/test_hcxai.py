@@ -137,7 +137,7 @@ def test_recommendation_engine_downgrades_technical_under_high_cognitive_load(hc
         "expert_user", prediction, SAMPLE_SHAP_CONFLICTING
     )
     assert strategy.detail_level == "detailed"
-    assert any("Downgraded" in r for r in strategy.rationale)
+    assert any("Đã giảm" in r for r in strategy.rationale)
 
 
 def test_recommendation_engine_respects_explicit_override(hcxai_env):

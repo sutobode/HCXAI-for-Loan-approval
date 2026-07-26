@@ -295,15 +295,15 @@ def recommend_explanation_strategy(
 
     detail_level = resolve_detail_level(user_id, detail_override, profile=profile)
     if not detail_override:
-        rationale.append(f"Using learned preference for user '{user_id}': {detail_level}")
+        rationale.append(f"Dùng mức độ chi tiết đã học được từ lịch sử tương tác của bạn: {detail_level}")
     else:
-        rationale.append(f"Using explicit request override: {detail_level}")
+        rationale.append(f"Dùng mức độ chi tiết được chỉ định trực tiếp cho lần này: {detail_level}")
 
     if load["recommendation"] == "simplify" and detail_level == "technical":
         detail_level = "detailed"
         rationale.append(
-            f"Downgraded from 'technical' to 'detailed': high cognitive load detected "
-            f"({load['n_significant_factors']} conflicting factors, load={load['perceived_load']})"
+            f"Đã giảm từ 'technical' xuống 'detailed': phát hiện tải nhận thức cao "
+            f"({load['n_significant_factors']} yếu tố mâu thuẫn nhau, mức tải={load['perceived_load']})"
         )
 
     # Low-confidence predictions benefit from showing similar historical cases
@@ -311,17 +311,17 @@ def recommend_explanation_strategy(
     suggest_similar_cases = prediction["confidence"] < 0.75
     suggest_counterfactual = prediction["prediction"] == "Rejected"
     if suggest_similar_cases:
-        rationale.append("Confidence below 75%: recommending Similar Case Explorer for context")
+        rationale.append("Độ tin cậy dưới 75%: gợi ý xem Hồ sơ tương tự để có thêm ngữ cảnh đối chiếu")
     if suggest_counterfactual:
-        rationale.append("Decision is Rejected: recommending counterfactual (actionable next steps)")
+        rationale.append("Quyết định là Bị từ chối: gợi ý xem Counterfactual (thay đổi khả thi tiếp theo)")
 
     trust_state = calibration.get("trust_state", "insufficient_data")
     if trust_state == "over_trust":
         trust_intervention: Literal["none", "highlight_uncertainty", "highlight_evidence"] = "highlight_uncertainty"
-        rationale.append("User shows over-trust pattern: will surface model uncertainty/limitations")
+        rationale.append("Người dùng có xu hướng tin tưởng quá mức: sẽ làm rõ thêm giới hạn/độ không chắc chắn của mô hình")
     elif trust_state == "under_trust":
         trust_intervention = "highlight_evidence"
-        rationale.append("User shows under-trust pattern: will surface supporting evidence/accuracy history")
+        rationale.append("Người dùng có xu hướng hoài nghi quá mức: sẽ bổ sung minh chứng/lịch sử độ chính xác để hỗ trợ")
     else:
         trust_intervention = "none"
 

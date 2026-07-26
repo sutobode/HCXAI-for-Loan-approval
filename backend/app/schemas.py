@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from typing import Any, Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class LoanApplicationRequest(BaseModel):
@@ -75,8 +75,15 @@ class ExplainRequest(BaseModel):
 
 
 class HCXAIExplanationResponse(ExplanationResponse):
+    # `model_version` collides with Pydantic's reserved "model_" namespace
+    # (used internally for model_dump()/model_config/etc.) -- this disables
+    # that protection for this field name specifically, since it's just a
+    # plain string field here, not a conflicting method/attribute.
+    model_config = ConfigDict(protected_namespaces=())
+
     prediction_id: int
     application_id: int
+    model_version: str
     progressive: dict[str, Any]
     user_profile: dict[str, Any]
     explanation_strategy: dict[str, Any]

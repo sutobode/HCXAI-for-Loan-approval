@@ -76,15 +76,38 @@ def _get_client() -> OpenAI | None:
     return _client
 
 
+# Categorical features are stored as their encoded 0/1 value (see
+# data_processing.encode_features), which is meaningless to show raw in a
+# narrative ("Trình độ học vấn (0.0)") -- so the template omits the number
+# for these and states the direction only.
+_CATEGORICAL_TEMPLATE_FEATURES = {"education", "self_employed"}
+
+
+def _format_template_value(feature: str, value: float) -> str | None:
+    """Vietnamese-style number formatting (dot thousands separator, no
+    trailing .0), matching how the same figures are shown in the input form.
+    Returns None for categorical features, whose encoded value isn't
+    meaningful to display."""
+    if feature in _CATEGORICAL_TEMPLATE_FEATURES:
+        return None
+    return f"{round(value):,}".replace(",", ".")
+
+
 def build_template_explanation(prediction: dict, shap_result: dict, role: str) -> str:
     """Deterministic, no-LLM fallback explanation built directly from SHAP values."""
     top = shap_result["contributions"][:3]
     decision_vi = "Được duyệt" if prediction["prediction"] == "Approved" else "Bị từ chối"
-    reasons = "; ".join(
-        f"{c['display_name']} ({c['value']}) "
-        f"{'hỗ trợ việc duyệt' if c['shap_contribution'] > 0 else 'làm giảm khả năng duyệt'}"
-        for c in top
-    )
+
+    reason_parts = []
+    for c in top:
+        direction = "hỗ trợ việc duyệt" if c["shap_contribution"] > 0 else "làm giảm khả năng duyệt"
+        formatted_value = _format_template_value(c["feature"], c["value"])
+        if formatted_value is not None:
+            reason_parts.append(f"{c['display_name']} ({formatted_value}) {direction}")
+        else:
+            reason_parts.append(f"{c['display_name']} {direction}")
+    reasons = "; ".join(reason_parts)
+
     return (
         f"Kết quả dự đoán: {decision_vi} "
         f"(xác suất duyệt {prediction['approval_probability']:.0%}). "
