@@ -770,11 +770,12 @@ def train_model(
     Admin-only -- this retrains on the full current dataset and, by default,
     activates the new version as the champion.
     """
-    if request.algorithm not in list_available_algorithms():
+    available_algorithms = list_available_algorithms()
+    if request.algorithm not in available_algorithms:
         raise HTTPException(
             status_code=400,
             detail=f"Thuật toán '{request.algorithm}' không khả dụng. "
-            f"Danh sách hợp lệ: {list_available_algorithms()}",
+            f"Danh sách hợp lệ: {available_algorithms}",
         )
     get_explainer.cache_clear()  # invalidate the singleton so the next request picks up the new champion
     result = train_new_version(

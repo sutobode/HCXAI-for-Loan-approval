@@ -1,35 +1,4 @@
 """Tests for JWT authentication and RBAC (backend/app/auth.py)."""
-import os
-
-import pytest
-from fastapi.testclient import TestClient
-
-
-@pytest.fixture()
-def client(tmp_path, monkeypatch):
-    """Spin up the FastAPI app against an isolated temp SQLite DB per test."""
-    monkeypatch.setenv("SQLITE_PATH", str(tmp_path / "test.db"))
-    monkeypatch.setenv("JWT_SECRET_KEY", "test-secret-key-for-pytest")
-    monkeypatch.setenv("DEFAULT_ADMIN_EMAIL", "admin@test.local")
-    monkeypatch.setenv("DEFAULT_ADMIN_PASSWORD", "TestAdmin123!")
-
-    # Reload settings/db modules so they pick up the monkeypatched env vars
-    import importlib
-
-    from app import config as config_module
-
-    importlib.reload(config_module)
-
-    from app import db as db_module
-
-    importlib.reload(db_module)
-
-    from app import main as main_module
-
-    importlib.reload(main_module)
-
-    with TestClient(main_module.app) as test_client:
-        yield test_client
 
 
 def test_health_is_public(client):
