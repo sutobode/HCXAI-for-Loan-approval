@@ -150,3 +150,29 @@ def sample_application_payload():
         "luxury_assets_value": 22700000,
         "bank_asset_value": 8000000,
     }
+
+
+@pytest.fixture
+def seeded_prediction_id(client, loan_officer_token, sample_application_payload):
+    """A real prediction created via /explain, guaranteed to land in the review
+    queue because its loan_amount comfortably exceeds REVIEW_LOAN_AMOUNT_THRESHOLD.
+
+    Uses an explicit Authorization header (instead of the `client_as_loan_officer`
+    fixture) so it doesn't clobber default headers a sibling `client_as_*` fixture
+    may have already set on this same shared TestClient instance within one test
+    (e.g. `test(client_as_risk_manager, seeded_prediction_id)` -- both fixtures
+    mutate the same underlying `client.headers`, so whichever ran last would win)."""
+    from app import db as db_module
+    from app.model_registry import train_new_version
+
+    if db_module.get_active_model_version() is None:
+        train_new_version(trained_by="pytest", notes="auto-trained for test_review_queue.py")
+
+    payload = dict(sample_application_payload)
+    payload["loan_amount"] = 40_000_000  # vượt REVIEW_LOAN_AMOUNT_THRESHOLD mặc định
+    resp = client.post(
+        "/explain",
+        json={"application": payload, "role": "loan_officer", "user_id": "test_loan_officer@hcxai.local"},
+        headers={"Authorization": f"Bearer {loan_officer_token}"},
+    )
+    return resp.json()["prediction_id"]

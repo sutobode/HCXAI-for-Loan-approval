@@ -1,4 +1,6 @@
 """Tests for Human-in-the-loop review-trigger logic (backend/app/main.py::evaluate_review_triggers)."""
+import json
+
 from app.main import evaluate_review_triggers
 
 
@@ -84,3 +86,28 @@ def test_low_confidence_and_fairness_group_flag_combine(monkeypatch):
     needs_review, reasons = evaluate_review_triggers(prediction, application, explainer=object())
     assert needs_review is True
     assert reasons == ["low_confidence", "fairness_group_flag"]
+
+
+def test_flag_for_review_sets_self_flagged_reason(client_as_loan_officer, seeded_prediction_id):
+    resp = client_as_loan_officer.post(f"/predictions/{seeded_prediction_id}/flag-for-review")
+    assert resp.status_code == 200
+    detail = client_as_loan_officer.get(f"/predictions/{seeded_prediction_id}").json()
+    assert detail["needs_review"] == 1
+    assert "self_flagged" in json.loads(detail["review_reasons"])
+
+
+def test_review_queue_lists_only_unresolved(client_as_risk_manager, seeded_prediction_id):
+    resp = client_as_risk_manager.get("/review-queue")
+    assert resp.status_code == 200
+    ids = [item["id"] for item in resp.json()["items"]]
+    assert seeded_prediction_id in ids
+
+
+def test_resolve_review_removes_from_queue(client_as_risk_manager, seeded_prediction_id):
+    resp = client_as_risk_manager.post(
+        f"/review-queue/{seeded_prediction_id}/resolve",
+        json={"decision": "confirmed", "note": "Đã xem xét, giữ nguyên quyết định."},
+    )
+    assert resp.status_code == 200
+    remaining = client_as_risk_manager.get("/review-queue").json()["items"]
+    assert seeded_prediction_id not in [item["id"] for item in remaining]

@@ -110,6 +110,7 @@ from .schemas import (
     PaginatedPredictions,
     PredictionResponse,
     RegisterRequest,
+    ResolveReviewRequest,
     SensitivitySweepRequest,
     SimilarCasesRequest,
     TokenResponse,
@@ -444,6 +445,68 @@ def get_prediction_detail(
     pred["shap_result"] = _json.loads(pred.pop("shap_json"))
     pred["feedback"] = db.get_feedback_for_prediction(prediction_id)
     return pred
+
+
+@app.post("/predictions/{prediction_id}/flag-for-review")
+def flag_prediction_for_review_endpoint(
+    prediction_id: int,
+    current_user: dict = Depends(auth.require_authenticated),
+):
+    """Voluntary flag: any authenticated user can send a prediction to the
+    human review queue, on top of the automatic triggers evaluated in /explain."""
+    pred = db.get_prediction(prediction_id)
+    if pred is None:
+        raise HTTPException(status_code=404, detail=f"Prediction {prediction_id} not found")
+    db.flag_prediction_for_review(prediction_id, reason="self_flagged")
+    db.log_audit_event(
+        user_id=current_user["email"], action="review.self_flag",
+        resource_type="prediction", resource_id=str(prediction_id),
+    )
+    return {"status": "flagged"}
+
+
+@app.get("/review-queue")
+def get_review_queue(
+    limit: int = 50,
+    offset: int = 0,
+    current_user: dict = Depends(auth.require_roles("admin", "risk_manager")),
+):
+    """Human review queue: predictions flagged (automatically or voluntarily)
+    that have not yet been resolved by a reviewer."""
+    return db.list_review_queue(limit=limit, offset=offset)
+
+
+@app.post("/review-queue/{prediction_id}/resolve")
+def resolve_review_endpoint(
+    prediction_id: int,
+    request: ResolveReviewRequest,
+    current_user: dict = Depends(auth.require_roles("admin", "risk_manager")),
+):
+    """Reviewer resolves a queued prediction: 'confirmed' keeps the AI decision,
+    'overridden' flips it. Either way, the reviewer's decision is fed into the
+    Trust Calibrator/User Modeler like any other human feedback."""
+    pred = db.get_prediction(prediction_id)
+    if pred is None:
+        raise HTTPException(status_code=404, detail=f"Prediction {prediction_id} not found")
+
+    db.resolve_review(prediction_id, reviewed_by=current_user["email"], decision=request.decision, note=request.note)
+
+    human_decision = pred["prediction"] if request.decision == "confirmed" else (
+        "Rejected" if pred["prediction"] == "Approved" else "Approved"
+    )
+    hcxai.record_human_decision(
+        user_id=current_user["email"],
+        prediction_id=prediction_id,
+        ai_prediction=pred["prediction"],
+        ai_confidence=pred["confidence"],
+        human_decision=human_decision,
+    )
+    db.log_audit_event(
+        user_id=current_user["email"], action="review.resolve",
+        resource_type="prediction", resource_id=str(prediction_id),
+        details={"decision": request.decision},
+    )
+    return {"status": "resolved"}
 
 
 @app.get("/applicants", response_model=PaginatedApplicants)

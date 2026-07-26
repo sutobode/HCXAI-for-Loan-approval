@@ -238,3 +238,8 @@ class ActivateModelRequest(BaseModel):
 class CompareModelsRequest(BaseModel):
     version_a: str
     version_b: str
+
+
+class ResolveReviewRequest(BaseModel):
+    decision: Literal["confirmed", "overridden"]
+    note: str | None = None

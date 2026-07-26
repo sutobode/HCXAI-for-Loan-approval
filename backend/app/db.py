@@ -397,6 +397,47 @@ def list_recent_predictions(limit: int = 50) -> list[dict[str, Any]]:
         return [dict(r) for r in rows]
 
 
+def flag_prediction_for_review(prediction_id: int, reason: str = "self_flagged") -> None:
+    with get_connection() as conn:
+        row = conn.execute("SELECT review_reasons FROM predictions WHERE id = ?", (prediction_id,)).fetchone()
+        if row is None:
+            raise ValueError(f"Prediction {prediction_id} not found")
+        existing = json.loads(row["review_reasons"] or "[]")
+        if reason not in existing:
+            existing.append(reason)
+        conn.execute(
+            "UPDATE predictions SET needs_review = 1, review_reasons = ? WHERE id = ?",
+            (json.dumps(existing), prediction_id),
+        )
+
+
+def list_review_queue(limit: int = 50, offset: int = 0) -> dict[str, Any]:
+    with get_connection() as conn:
+        rows = conn.execute(
+            """SELECT p.*, a.applicant_id AS applicant_id, ap.full_name AS applicant_name
+               FROM predictions p
+               LEFT JOIN applications a ON a.id = p.application_id
+               LEFT JOIN applicants ap ON ap.id = a.applicant_id
+               WHERE p.needs_review = 1 AND p.reviewed_by IS NULL
+               ORDER BY p.id ASC LIMIT ? OFFSET ?""",
+            (limit, offset),
+        ).fetchall()
+        total = conn.execute(
+            "SELECT COUNT(*) AS c FROM predictions WHERE needs_review = 1 AND reviewed_by IS NULL"
+        ).fetchone()["c"]
+        return {"items": [dict(r) for r in rows], "total": total}
+
+
+def resolve_review(prediction_id: int, reviewed_by: str, decision: str, note: str | None) -> None:
+    with get_connection() as conn:
+        conn.execute(
+            """UPDATE predictions
+               SET reviewed_by = ?, reviewed_at = ?, review_decision = ?, review_note = ?
+               WHERE id = ?""",
+            (reviewed_by, _now(), decision, note, prediction_id),
+        )
+
+
 # ---------------------------------------------------------------------------
 # Feedback (Feedback Learner)
 # ---------------------------------------------------------------------------
