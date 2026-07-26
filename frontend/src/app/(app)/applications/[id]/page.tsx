@@ -21,6 +21,7 @@ import { AiInterpretButton } from "@/components/ui/ai-interpret-button";
 import {
   explainWithCounterfactual,
   explainWithLime,
+  flagPredictionForReview,
   getDecisionProvenance,
   getExplanationQuality,
   getPredictionDetail,
@@ -32,6 +33,13 @@ import {
 import { getApiErrorMessage } from "@/lib/api";
 import { useAuthStore } from "@/stores/auth-store";
 import type { LoanApplication } from "@/lib/types";
+
+const REVIEW_REASON_LABELS: Record<string, string> = {
+  low_confidence: "Độ tin cậy thấp",
+  high_loan_amount: "Số tiền vay lớn",
+  fairness_group_flag: "Thuộc nhóm vi phạm công bằng",
+  self_flagged: "Tự nguyện gắn cờ",
+};
 
 export default function ApplicationDetailPage() {
   const params = useParams<{ id: string }>();
@@ -73,6 +81,15 @@ export default function ApplicationDetailPage() {
     onError: (error) => toast.error(getApiErrorMessage(error, "Kiểm tra chất lượng giải thích thất bại")),
   });
 
+  const flagMutation = useMutation({
+    mutationFn: () => flagPredictionForReview(id),
+    onSuccess: () => {
+      toast.success("Đã đánh dấu hồ sơ cần xem xét thêm");
+      queryClient.invalidateQueries({ queryKey: ["prediction", id] });
+    },
+    onError: (error) => toast.error(getApiErrorMessage(error, "Gắn cờ thất bại")),
+  });
+
   if (isLoading) {
     return (
       <div className="space-y-6">
@@ -102,7 +119,7 @@ export default function ApplicationDetailPage() {
       <PageHeader
         title={`Hồ sơ #${data.id}${data.applicant_name ? ` — ${data.applicant_name}` : ""}`}
         description={
-          <div className="flex items-center gap-3 text-sm text-muted-foreground">
+          <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
             <span>Nộp lúc {new Date(data.created_at).toLocaleString("vi-VN")}</span>
             {data.model_version && (
               <>
@@ -112,13 +129,28 @@ export default function ApplicationDetailPage() {
                 </Badge>
               </>
             )}
+            {data.needs_review === 1 && !data.reviewed_by && (
+              <>
+                <span>•</span>
+                <Badge variant="outline" className="border-amber-500 text-amber-600 dark:text-amber-400">
+                  Cần xem xét: {JSON.parse(data.review_reasons || "[]").map((r: string) => REVIEW_REASON_LABELS[r] ?? r).join(", ")}
+                </Badge>
+              </>
+            )}
           </div>
         }
         actions={
-          <Button variant="outline" onClick={() => router.push("/applications")}>
-            <ArrowLeft className="size-4" />
-            Quay lại
-          </Button>
+          <div className="flex items-center gap-2">
+            {(!data.needs_review || data.reviewed_by) && (
+              <Button variant="ghost" size="sm" onClick={() => flagMutation.mutate()} disabled={flagMutation.isPending}>
+                Đánh dấu cần xem xét
+              </Button>
+            )}
+            <Button variant="outline" onClick={() => router.push("/applications")}>
+              <ArrowLeft className="size-4" />
+              Quay lại
+            </Button>
+          </div>
         }
       />
 

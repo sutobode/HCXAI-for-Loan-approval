@@ -116,9 +116,16 @@ export default function ApplicationsPage() {
                       {p.applicant_name ?? <span className="text-muted-foreground">—</span>}
                     </TableCell>
                     <TableCell>
-                      <Badge variant={p.prediction === "Approved" ? "default" : "destructive"}>
-                        {p.prediction === "Approved" ? "Được duyệt" : "Bị từ chối"}
-                      </Badge>
+                      <div className="flex flex-wrap items-center gap-1">
+                        <Badge variant={p.prediction === "Approved" ? "default" : "destructive"}>
+                          {p.prediction === "Approved" ? "Được duyệt" : "Bị từ chối"}
+                        </Badge>
+                        {p.needs_review === 1 && !p.reviewed_by && (
+                          <Badge variant="outline" className="border-amber-500 text-amber-600 dark:text-amber-400">
+                            Cần xem xét
+                          </Badge>
+                        )}
+                      </div>
                     </TableCell>
                     <TableCell>{Math.round(p.approval_probability * 100)}%</TableCell>
                     <TableCell>{Math.round(p.risk_score * 100)}%</TableCell>
